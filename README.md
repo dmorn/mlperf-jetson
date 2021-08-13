@@ -21,3 +21,5 @@ revert the change afterwards.
 
 ## Next
 - p3448-0000.conf
+- https://www.tensorflow.org/install/lang_c
+- https://github.com/mlcommons/tiny/tree/master/v0.5/training/keyword_spotting
