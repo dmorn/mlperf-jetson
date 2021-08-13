@@ -1,5 +1,5 @@
 # mlperf-jetson
-mlcommons tiny performance benchmark on NVIDIA Jetson Nano.
+mlcommons tiny performance benchmark on **NVIDIA Jetson Nano**.
 
 ## Notes
 The board's SD card needs to be populated with the proper software stack.
@@ -18,8 +18,15 @@ PM CEST) will comply that it works only on ubuntu 18.xx.  Change
 /etc/os-release VERSION_ID field to "18.04" and use it happily. Remember to
 revert the change afterwards.
 
+The serial line used is the one accessible through pins 8,10 of J41. In my
+case, the associated device is `/dev/ttyTHS1`.
 
-## Next
-- p3448-0000.conf
+The dtb is tegra210-p3448-0000-p3449-0000-a02.dtb. Extract the source issuing something like
+```
+% dtc -I dtb -O dts -o src.dts tegra210-p3448-0000-p3449-0000-a02.dtb
+```
+
+## Links
 - https://www.tensorflow.org/install/lang_c
 - https://github.com/mlcommons/tiny/tree/master/v0.5/training/keyword_spotting
+- 
