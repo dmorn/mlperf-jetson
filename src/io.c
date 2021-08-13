@@ -29,12 +29,13 @@ th_printf(const char *p_fmt, ...) {
 	va_end(args);
 }
 
-char th_getchar() {
+char
+th_getchar() {
 	char buf[1];
 	if(read(port, buf, sizeof(buf)) < 0) {
 		fatale("th_getchar");
 	}
-	// printf("debug: th_getchar: %c\n", buf[0]);
+	printf("debug: th_getchar: %c\n", buf[0]);
 	return buf[0];
 }
 

@@ -42,8 +42,8 @@ extern "C" {
 /// \detail This API is designed for performance evaluation only. In order to
 /// gather energy measurments we recommend using the EEMBC test suite.
 #define EE_MSG_TIMESTAMP "m-lap-us-%lu\r\n"
-#define TH_VENDOR_NAME_STRING "xlnx"
-#define TH_MODEL_VERSION EE_MODEL_VERSION_IC01  // RESNET, CIFAR-10
+#define TH_VENDOR_NAME_STRING "jetson"
+#define TH_MODEL_VERSION EE_MODEL_VERSION_KWS01
 
 #define MAX_DB_INPUT_SIZE (96 * 96 * 3)
 #ifndef TH_MODEL_VERSION

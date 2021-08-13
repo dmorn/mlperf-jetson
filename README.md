@@ -26,6 +26,13 @@ The dtb is tegra210-p3448-0000-p3449-0000-a02.dtb. Extract the source issuing so
 % dtc -I dtb -O dts -o src.dts tegra210-p3448-0000-p3449-0000-a02.dtb
 ```
 
+I had to disable getty on that serial line and I still need to determine which service
+was referencing to that specific device (it must be an alias). Anyway
+```
+% systemctl stop serial-getty@ttyS0.service
+% systemctl stop serial-getty@ttyGS0.service
+```
+
 ## Links
 - https://www.tensorflow.org/install/lang_c
 - https://github.com/mlcommons/tiny/tree/master/v0.5/training/keyword_spotting
