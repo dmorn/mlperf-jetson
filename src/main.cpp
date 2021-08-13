@@ -23,7 +23,8 @@ usage(char *name) {
 	exit(2);
 }
 
-int main(int argc, char *argv[]) {
+int
+main(int argc, char *argv[]) {
 	if(argc < 1) {
 		usage(argv[0]);
 	}
