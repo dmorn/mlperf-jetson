@@ -26,15 +26,14 @@ in th_results is copied from the original in EEMBC.
 /// \file
 /// \brief C++ implementations of submitter_implemented.h
 
-#include "api/submitter_implemented.h"
-
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
 
-#include "api/internally_implemented.h"
+#include "submitter_implemented.h"
+#include "internally_implemented.h"
 
 // Implement this method to prepare for inference and preprocess inputs.
 void th_load_tensor() {

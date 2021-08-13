@@ -13,7 +13,7 @@ SIZE            ?= size
 RM = rm -f
 ARFLAGS := -csr
 
-CPPSRCS += main.cpp submitter_implemented.cpp api/internally_implemented.cpp
+CPPSRCS += main.cpp submitter_implemented.cpp internally_implemented.cpp
 CCSRCS += io.c
 
 OBJS += $(patsubst %.cpp,%.o,$(CPPSRCS))

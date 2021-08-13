@@ -14,8 +14,8 @@ limitations under the License.
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "api/internally_implemented.h"
-#include "api/submitter_implemented.h"
+#include "internally_implemented.h"
+#include "submitter_implemented.h"
 
 int
 usage(char *name) {

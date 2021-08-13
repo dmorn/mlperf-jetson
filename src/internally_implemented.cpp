@@ -27,13 +27,12 @@ replaced by a fixed-size array.
 /// \file
 /// \brief Internally-implemented methods required to perform inference.
 
-#include "api/internally_implemented.h"
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
 
-#include "api/submitter_implemented.h"
+#include "internally_implemented.h"
+#include "submitter_implemented.h"
 
 // Command buffer (incoming commands from host)
 char volatile g_cmd_buf[EE_CMD_SIZE + 1];
