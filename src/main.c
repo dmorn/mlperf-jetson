@@ -1,39 +1,27 @@
-/*
-Copyright (C) EEMBC(R). All Rights Reserved
+#include <termios.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <time.h>
 
-All EEMBC Benchmark Software are products of EEMBC and are provided under the
-terms of the EEMBC Benchmark License Agreements. The EEMBC Benchmark Software
-are proprietary intellectual properties of EEMBC and its Members and is
-protected under all applicable laws, including all applicable copyright laws.
+#include "api/submitter_implemented.h"
+#include "api/internally_implemented.h"
 
-If you received this EEMBC Benchmark Software without having a currently
-effective EEMBC Benchmark License Agreement, you must discontinue use.
+int port;
+char *line;
 
-Copyright 2020 The MLPerf Authors. All Rights Reserved.
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-    http://www.apache.org/licenses/LICENSE-2.0
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
+#define kNumCols 10
+#define kNumRows 49
+#define kNumChannels 1
+#define kKwsInputSize kNumCols * kNumRows * kNumChannels
+#define kCategoryCount 12
 
-This file reflects a modified version of th_lib from EEMBC. The reporting logic
-in th_results is copied from the original in EEMBC.
-==============================================================================*/
-/// \file
-/// \brief C++ implementations of submitter_implemented.h
-
-#include <cstdarg>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-#include <ctime>
-
-#include "submitter_implemented.h"
-#include "internally_implemented.h"
+char* kCategoryLabels[kCategoryCount] = {
+	"down", "go", "left", "no", "off", "on",
+	"right", "stop", "up", "yes", "silence", "unknown"
+};
 
 // Implement this method to prepare for inference and preprocess inputs.
 void
@@ -49,14 +37,13 @@ th_results() {
 	 * that.
 	*/
 	th_printf("m-results-[");
-	int kCategoryCount = 2;
 	for (size_t i = 0; i < kCategoryCount; i++) {
 		float converted = 0;
 
 		// Some platforms don't implement floating point formatting.
-		th_printf("0.%d", static_cast<int>(converted * 10));
-		th_printf("%d", static_cast<int>(converted * 100) % 10);
-		th_printf("%d", static_cast<int>(converted * 1000) % 10);
+		th_printf("0.%d", (int)converted * 10);
+		th_printf("%d", (int)converted * 100 % 10);
+		th_printf("%d", (int)converted * 1000 % 10);
 		if (i < (nresults - 1)) {
 		th_printf(",");
 		}
@@ -101,6 +88,7 @@ th_strncpy(char *dest, const char *src, size_t n) {
 
 size_t
 th_strnlen(const char *str, size_t maxlen) {
+	size_t strnlen (const char *__string, size_t __maxlen);
 	return strnlen(str, maxlen);
 }
 
@@ -149,4 +137,77 @@ th_timestamp_initialize(void) {
 	/* Always call the timestamp on initialize so that the open-drain output
 	is set to "1" (so that we catch a falling edge) */
 	th_timestamp();
+}
+
+void
+fatale(char *s) {
+	perror(s);
+	exit(2);
+}
+
+int
+th_vprintf(const char *format, va_list ap) {
+	int vdprintf(int __fd, const char *__restrict __fmt, __gnuc_va_list __arg);
+	return vdprintf(port, format, ap);
+}
+
+void
+th_printf(const char *p_fmt, ...) {
+	va_list args;
+	va_start(args, p_fmt);
+	(void)th_vprintf(p_fmt, args); /* ignore return */
+	va_end(args);
+}
+
+char
+th_getchar() {
+	char buf[1];
+	if(read(port, buf, sizeof(buf)) < 0) {
+		fatale("th_getchar");
+	}
+	// printf("debug: th_getchar: %c\n", buf[0]);
+	return buf[0];
+}
+
+void
+th_serialport_initialize(void) {
+	struct termios tty;
+	void cfmakeraw(struct termios *__termios_p);
+
+	// TODO: when is this resource released?
+	if((port = open(line, O_RDWR)) < 0) {
+		fatale("th_serialport_initialize");
+	}
+	if(tcgetattr(port, &tty) != 0) {
+		fatale("th_serialport_initialize");
+	}
+	cfmakeraw(&tty);
+	cfsetispeed(&tty, B115200);
+	cfsetospeed(&tty, B115200);
+
+	if(tcsetattr(port, TCSANOW, &tty) != 0) {
+		fatale("th_serialport_initialize");
+	}
+}
+
+int
+usage(char *name) {
+	fprintf(stderr, "usage: %s [serial device, e.g. /dev/ttyPS0]", name);
+	exit(2);
+}
+
+int
+main(int argc, char *argv[]) {
+	if(argc < 1) {
+		usage(argv[0]);
+	}
+	line = argv[1];
+
+	ee_benchmark_initialize();
+	while (1) {
+		int c;
+		c = th_getchar();
+		ee_serial_callback(c);
+	}
+	return 0;
 }

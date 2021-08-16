@@ -13,15 +13,14 @@ SIZE            ?= size
 RM = rm -f
 ARFLAGS := -csr
 
-CPPSRCS += main.cpp submitter_implemented.cpp internally_implemented.cpp
-CCSRCS += io.c
+CPPSRCS += api/internally_implemented.cpp
+CCSRCS += main.c
 
 OBJS += $(patsubst %.cpp,%.o,$(CPPSRCS))
 OBJS += $(patsubst %.c,%.o,$(CCSRCS))
 
 CXXFLAGS += -std=c++11 -I.
-CCFLAGS +=  -std=c11 -I.
-#LDFLAGS +=  -lm -static
+CCFLAGS += -std=c11 -I.
 LDFLAGS += -lm
 
 all: runner
@@ -35,8 +34,6 @@ $(BINDIR): ; mkdir -p $(BINDIR)
 
 runner: download_deps $(OBJS) $(BINDIR)
 	$(CXX) -o $(BINDIR)/$@ $(OBJS) $(LDFLAGS)
-st: $(BINDIR) serial.o
-	$(CC) -o $(BINDIR)/$@ serial.o $(LDFLAGS)
 
 runner_msan : download_deps $(OBJS)
 	$(CXX) $(CXXFLAGS) -fsanitize=memory -o $@ $(OBJS) $(LDFLAGS)

@@ -33,6 +33,10 @@ The file name has been changed and some functions removed.
 #ifndef MLPERF_TINY_V0_1_API_INTERNALLY_IMPLEMENTED_H_
 #define MLPERF_TINY_V0_1_API_INTERNALLY_IMPLEMENTED_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define EE_MONITOR_VERSION "2.2.0"
 #define EE_FW_VERSION "ULPMark for tinyML Firmware V0.0.1"
 
@@ -68,5 +72,9 @@ void ee_infer(size_t n, size_t n_warmup);
 size_t ee_get_buffer(uint8_t* buffer, size_t max_len);
 arg_claimed_t ee_buffer_parse(char *command);
 arg_claimed_t ee_profile_parse(char *command);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* MLPERF_TINY_V0_1_API_INTERNALLY_IMPLEMENTED_H_ */

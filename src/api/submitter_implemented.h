@@ -31,12 +31,12 @@ methods from th_libc.h and all testharness methods from th_lib.h are here.
 /// methods default to an empty implementation. These methods are provided to
 /// enable submitter optimizations, and are not required for submission.
 
+#ifndef MLPERF_TINY_V0_1_API_SUBMITTER_IMPLEMENTED_H_
+#define MLPERF_TINY_V0_1_API_SUBMITTER_IMPLEMENTED_H_
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#ifndef MLPERF_TINY_V0_1_API_SUBMITTER_IMPLEMENTED_H_
-#define MLPERF_TINY_V0_1_API_SUBMITTER_IMPLEMENTED_H_
 
 /// \brief These defines set logging prefixes for test harness integration.
 /// \detail This API is designed for performance evaluation only. In order to
@@ -71,7 +71,8 @@ extern "C" {
 #include <stdlib.h>
 #include <string.h>
 
-extern char *line;
+// Numbers derived from the model itself - if that changes, these contants
+// should be updated.
 
 /// \brief required core API
 void th_load_tensor();
@@ -100,8 +101,9 @@ void *th_memset(void *b, int c, size_t len);
 void *th_memcpy(void *dst, const void *src, size_t n);
 int th_vprintf(const char *format, va_list ap);
 
-#endif  // MLPERF_TINY_V0_1_API_SUBMITTER_IMPLEMENTED_H_
-
 #ifdef __cplusplus
 }
 #endif
+
+#endif  // MLPERF_TINY_V0_1_API_SUBMITTER_IMPLEMENTED_H_
+

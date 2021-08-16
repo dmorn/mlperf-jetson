@@ -37,3 +37,4 @@ was referencing to that specific device (it must be an alias). Anyway
 - https://www.tensorflow.org/install/lang_c
 - https://github.com/mlcommons/tiny/tree/master/v0.5/training/keyword_spotting
 - https://qengineering.eu/install-tensorflow-2.3.1-on-jetson-nano.html
+- https://www.tensorflow.org/guide/saved_model#load_a_savedmodel_in_c

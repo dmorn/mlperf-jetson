@@ -5,7 +5,7 @@ const char *tags = "serve";
 
 int
 usage(char *name) {
-	fprintf(stderr, "usage %s <tensorflow saved model dir path>\n", name);
+	fprintf(stderr, "usage %s [tensorflow saved model dir path]\n", name);
 	return 1;
 }
 
