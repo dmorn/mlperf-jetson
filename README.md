@@ -36,4 +36,4 @@ was referencing to that specific device (it must be an alias). Anyway
 ## Links
 - https://www.tensorflow.org/install/lang_c
 - https://github.com/mlcommons/tiny/tree/master/v0.5/training/keyword_spotting
-- 
+- https://qengineering.eu/install-tensorflow-2.3.1-on-jetson-nano.html
