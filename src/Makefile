@@ -19,9 +19,9 @@ CCSRCS += main.c
 OBJS += $(patsubst %.cpp,%.o,$(CPPSRCS))
 OBJS += $(patsubst %.c,%.o,$(CCSRCS))
 
-CXXFLAGS += -std=c++11 -I.
-CCFLAGS += -std=c11 -I.
-LDFLAGS += -lm
+CXXFLAGS += -std=c++11 -I. -g
+CCFLAGS += -std=c11 -I. -g -Wno-discarded-qualifiers
+LDFLAGS += -lm -ltensorflow -g
 
 all: runner
 $(BINDIR): ; mkdir -p $(BINDIR)

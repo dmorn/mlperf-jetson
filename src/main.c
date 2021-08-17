@@ -5,12 +5,10 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <time.h>
+#include <tensorflow/c/c_api.h>
 
 #include "api/submitter_implemented.h"
 #include "api/internally_implemented.h"
-
-int port;
-char *line;
 
 #define kNumCols 10
 #define kNumRows 49
@@ -18,14 +16,20 @@ char *line;
 #define kKwsInputSize kNumCols * kNumRows * kNumChannels
 #define kCategoryCount 12
 
+int port;
+char *line;
+const char *model_dir;
+const char *tags = "serve";
+
 char* kCategoryLabels[kCategoryCount] = {
 	"down", "go", "left", "no", "off", "on",
 	"right", "stop", "up", "yes", "silence", "unknown"
 };
 
-// Implement this method to prepare for inference and preprocess inputs.
 void
-th_load_tensor() {
+fatale(char *s) {
+	perror(s);
+	exit(2);
 }
 
 // Add to this method to return real inference results.
@@ -51,22 +55,152 @@ th_results() {
 	th_printf("]\r\n");
 }
 
+void
+th_serialport_initialize(void) {
+	struct termios tty;
+	void cfmakeraw(struct termios *__termios_p);
+
+	// Note the port is never closed.
+	if((port = open(line, O_RDWR)) < 0) {
+		fatale("th_serialport_initialize");
+	}
+	if(tcgetattr(port, &tty) != 0) {
+		fatale("th_serialport_initialize");
+	}
+	cfmakeraw(&tty);
+	cfsetispeed(&tty, B115200);
+	cfsetospeed(&tty, B115200);
+
+	if(tcsetattr(port, TCSANOW, &tty) != 0) {
+		fatale("th_serialport_initialize");
+	}
+}
+
+void
+th_timestamp_initialize(void) {
+	/* USER CODE 1 BEGIN */
+	// Setting up BOTH perf and energy here
+	/* USER CODE 1 END */
+	/* This message must NOT be changed. */
+	th_printf(EE_MSG_TIMESTAMP_MODE);
+	/* Always call the timestamp on initialize so that the open-drain output
+	is set to "1" (so that we catch a falling edge) */
+	th_timestamp();
+}
+
+TF_Status *s;
+TF_Session *sess;
+TF_Graph* g;
+TF_SessionOptions *opts;
+TF_Output ndin[1], ndout[1];
+TF_Tensor *tin[1], *tout[1];
+
+void
+th_final_initialize(void) {
+	/* 
+	inputs['input_1'] tensor_info:
+	      dtype: DT_FLOAT
+	      shape: (-1, 49, 10, 1)
+	      name: serving_default_input_1:0
+	The given SavedModel SignatureDef contains the following output(s):
+	  outputs['dense'] tensor_info:
+	      dtype: DT_FLOAT
+	      shape: (-1, 12)
+	      name: StatefulPartitionedCall:0
+	Method name is: tensorflow/serving/predict
+	*/
+
+	g = TF_NewGraph();
+	s = TF_NewStatus();
+	opts = TF_NewSessionOptions();
+	sess = TF_LoadSessionFromSavedModel(opts, NULL, model_dir, &tags, 1, g, NULL, s);
+	if(TF_GetCode(s) != TF_OK) {
+		fatale(TF_Message(s));
+	}
+
+	ndin[0] = (TF_Output){TF_GraphOperationByName(g, "serving_default_input_1:0"), 0}; 
+	ndout[0] = (TF_Output){TF_GraphOperationByName(g, "StatefulPartitionedCall:0"), 0};
+}
+
+void
+tf_dealloc(void *data, size_t len, void *arg) {
+	// Buffer is not dynamically allocated hence does not need to be
+	// freed.
+}
+
+// Implement this method to prepare for inference and preprocess inputs.
+void
+th_load_tensor() {
+	int8_t bufin[kKwsInputSize];
+	float buft[kKwsInputSize];
+	float bufout[kCategoryCount];
+
+	size_t n, len;
+	int64_t dimsin[] = {kNumCols, kNumRows}, dimsout[] = {kCategoryCount};
+
+	TF_Tensor *in;
+
+	// expected input: 10x49 8b MFCC
+	len = kKwsInputSize * sizeof(int8_t);
+	n = ee_get_buffer(bufin, len);
+	if(n != len)
+		fatale("ee_get_buffer: short read");
+	for(int i = 0; i < kKwsInputSize; i++) {
+		buft[i] = (float)bufin[i];
+	}
+
+	len = kKwsInputSize * sizeof(float);
+	in = TF_NewTensor(TF_FLOAT, dimsin, 2, buft, len, tf_dealloc, NULL);
+	if(in == NULL)
+		fatale("input tensor allocation failure");
+	tin[0] = (TF_Tensor*){in};
+
+	/* I believe I do not have to do anything with it, TF_SessionRun will
+	 * allocate memory for the tensors which I must free upon usage.
+	len = kCategoryCount * sizeof(float);
+	out = TF_NewTensor(TF_FLOAT, dimsout, 1, bufout, len, tf_dealloc, NULL);
+	if(in == NULL)
+		fatale("output tensor allocation failure");
+	tout = {out};
+	*/
+}
+
 // Implement this method with the logic to perform one inference cycle.
 void
 th_infer() {
-}
-
-/// \brief optional API.
-void
-th_final_initialize(void) {
-}
-
-void
-th_pre() {
+	TF_SessionRun(
+		sess, NULL,
+		ndin, tin, 1,
+		ndout, tout, 1,
+		NULL, 0,
+		NULL,
+		s
+	);
+	if(TF_GetCode(s) != TF_OK) {
+		fatale(TF_Message(s));
+	}
 }
 
 void
 th_post() {
+	TF_DeleteGraph(g);
+	TF_DeleteSessionOptions(opts);
+
+	TF_CloseSession(sess, s);
+	if(TF_GetCode(s) != TF_OK) {
+		fatale(TF_Message(s));
+	}
+	TF_DeleteSession(sess, s);
+	if(TF_GetCode(s) != TF_OK) {
+		fatale(TF_Message(s));
+	}
+
+	/* TODO: delete tensors
+	TF_DeleteTensor(tin); */
+}
+
+void
+th_pre() {
 }
 
 void
@@ -127,24 +261,6 @@ th_timestamp(void) {
 	th_printf(EE_MSG_TIMESTAMP, microSeconds);
 }
 
-void
-th_timestamp_initialize(void) {
-	/* USER CODE 1 BEGIN */
-	// Setting up BOTH perf and energy here
-	/* USER CODE 1 END */
-	/* This message must NOT be changed. */
-	th_printf(EE_MSG_TIMESTAMP_MODE);
-	/* Always call the timestamp on initialize so that the open-drain output
-	is set to "1" (so that we catch a falling edge) */
-	th_timestamp();
-}
-
-void
-fatale(char *s) {
-	perror(s);
-	exit(2);
-}
-
 int
 th_vprintf(const char *format, va_list ap) {
 	int vdprintf(int __fd, const char *__restrict __fmt, __gnuc_va_list __arg);
@@ -161,7 +277,7 @@ th_printf(const char *p_fmt, ...) {
 
 char
 th_getchar() {
-	char buf[1];
+	static char buf[1];
 	if(read(port, buf, sizeof(buf)) < 0) {
 		fatale("th_getchar");
 	}
@@ -169,39 +285,21 @@ th_getchar() {
 	return buf[0];
 }
 
-void
-th_serialport_initialize(void) {
-	struct termios tty;
-	void cfmakeraw(struct termios *__termios_p);
-
-	// TODO: when is this resource released?
-	if((port = open(line, O_RDWR)) < 0) {
-		fatale("th_serialport_initialize");
-	}
-	if(tcgetattr(port, &tty) != 0) {
-		fatale("th_serialport_initialize");
-	}
-	cfmakeraw(&tty);
-	cfsetispeed(&tty, B115200);
-	cfsetospeed(&tty, B115200);
-
-	if(tcsetattr(port, TCSANOW, &tty) != 0) {
-		fatale("th_serialport_initialize");
-	}
-}
-
 int
 usage(char *name) {
-	fprintf(stderr, "usage: %s [serial device, e.g. /dev/ttyPS0]", name);
+	fprintf(stderr, "usage: %s [model dir] [serial device, e.g. /dev/ttyPS0]", name);
 	exit(2);
 }
 
 int
 main(int argc, char *argv[]) {
-	if(argc < 1) {
+	if(argc < 2) {
 		usage(argv[0]);
 	}
-	line = argv[1];
+	model_dir = argv[1];
+	line = argv[2];
+
+	printf("Hello from TensorFlow C library version %s\n", TF_Version());
 
 	ee_benchmark_initialize();
 	while (1) {
