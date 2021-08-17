@@ -33,8 +33,26 @@ was referencing to that specific device (it must be an alias). Anyway
 % systemctl stop serial-getty@ttyGS0.service
 ```
 
+
+## About the model
+```
+% saved_model_cli show --dir kws_ref_model --tag_set serve --signature_def serving_default
+The given SavedModel SignatureDef contains the following input(s):
+  inputs['input_1'] tensor_info:
+      dtype: DT_FLOAT
+      shape: (-1, 49, 10, 1)
+      name: serving_default_input_1:0
+The given SavedModel SignatureDef contains the following output(s):
+  outputs['dense'] tensor_info:
+      dtype: DT_FLOAT
+      shape: (-1, 12)
+      name: StatefulPartitionedCall:0
+Method name is: tensorflow/serving/predict
+```
+
 ## Links
 - https://www.tensorflow.org/install/lang_c
 - https://github.com/mlcommons/tiny/tree/master/v0.5/training/keyword_spotting
 - https://qengineering.eu/install-tensorflow-2.3.1-on-jetson-nano.html
 - https://www.tensorflow.org/guide/saved_model#load_a_savedmodel_in_c
+- https://medium.com/@vladislavsd/undocumented-tensorflow-c-api-b527c0b4ef6
