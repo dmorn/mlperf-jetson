@@ -50,9 +50,15 @@ The given SavedModel SignatureDef contains the following output(s):
 Method name is: tensorflow/serving/predict
 ```
 
+## Other notes
+```
+2021-08-18 11:05:36.049422: W tensorflow/core/platform/profile_utils/cpu_utils.cc:108] Failed to find bogomips or clock in /proc/cpuinfo; cannot determine CPU frequency
+```
+
 ## Links
 - https://www.tensorflow.org/install/lang_c
 - https://github.com/mlcommons/tiny/tree/master/v0.5/training/keyword_spotting
 - https://qengineering.eu/install-tensorflow-2.3.1-on-jetson-nano.html
 - https://www.tensorflow.org/guide/saved_model#load_a_savedmodel_in_c
 - https://medium.com/@vladislavsd/undocumented-tensorflow-c-api-b527c0b4ef6
+- https://docs.nvidia.com/deeplearning/frameworks/install-tf-jetson-platform/index.html
