@@ -1,3 +1,6 @@
+// gcc preprocessor directive. Enables getopt from unistd.h
+#define _POSIX_C_SOURCE 2
+
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -28,37 +31,16 @@ char* kCategoryLabels[kCategoryCount] = {
 
 void
 fatale(char *s) {
-	perror(s);
-	exit(2);
-}
-
-// Add to this method to return real inference results.
-void
-th_results() {
-	const int nresults = 3;
-	/* The results need to be printed back in exactly this format; if
-	 * easier to just modify this loop than copy to results[] above, do
-	 * that.
-	*/
-	th_printf("m-results-[");
-	for (size_t i = 0; i < kCategoryCount; i++) {
-		float converted = 0;
-
-		// Some platforms don't implement floating point formatting.
-		th_printf("0.%d", (int)converted * 10);
-		th_printf("%d", (int)converted * 100 % 10);
-		th_printf("%d", (int)converted * 1000 % 10);
-		if (i < (nresults - 1)) {
-		th_printf(",");
-		}
-	}
-	th_printf("]\r\n");
+	fprintf(stderr, "\nerror: %s\n", s);
+	exit(1);
 }
 
 void
 th_serialport_initialize(void) {
 	struct termios tty;
 	void cfmakeraw(struct termios *__termios_p);
+
+	fprintf(stderr, "initializing serial port..");
 
 	// Note the port is never closed.
 	if((port = open(line, O_RDWR)) < 0) {
@@ -74,6 +56,8 @@ th_serialport_initialize(void) {
 	if(tcsetattr(port, TCSANOW, &tty) != 0) {
 		fatale("th_serialport_initialize");
 	}
+
+	fprintf(stderr, ".done\n");
 }
 
 void
@@ -92,6 +76,7 @@ TF_Status *s;
 TF_Session *sess;
 TF_Graph* g;
 TF_SessionOptions *opts;
+
 TF_Output ndin[1], ndout[1];
 TF_Tensor *tin[1], *tout[1];
 
@@ -109,6 +94,7 @@ th_final_initialize(void) {
 	      name: StatefulPartitionedCall:0
 	Method name is: tensorflow/serving/predict
 	*/
+	fprintf(stderr, "initializing tensors..");
 
 	g = TF_NewGraph();
 	s = TF_NewStatus();
@@ -118,71 +104,20 @@ th_final_initialize(void) {
 		fatale(TF_Message(s));
 	}
 
-	ndin[0] = (TF_Output){TF_GraphOperationByName(g, "serving_default_input_1:0"), 0}; 
-	ndout[0] = (TF_Output){TF_GraphOperationByName(g, "StatefulPartitionedCall:0"), 0};
+	ndin[0] = (TF_Output){TF_GraphOperationByName(g,  "serving_default_input_1"), 0}; 
+	if(ndin[0].oper == NULL)
+		fatale("serving_default_input_1 not found within graph");
+
+	ndout[0] = (TF_Output){TF_GraphOperationByName(g, "StatefulPartitionedCall"), 0};
+	if(ndout[0].oper == NULL)
+		fatale("StatefulPartitionedCall not found within graph");
+
+	fprintf(stderr, ".done\n");
+	fprintf(stderr, "** READY\n");
 }
 
 void
-tf_dealloc(void *data, size_t len, void *arg) {
-	// Buffer is not dynamically allocated hence does not need to be
-	// freed.
-}
-
-// Implement this method to prepare for inference and preprocess inputs.
-void
-th_load_tensor() {
-	int8_t bufin[kKwsInputSize];
-	float buft[kKwsInputSize];
-	float bufout[kCategoryCount];
-
-	size_t n, len;
-	int64_t dimsin[] = {kNumCols, kNumRows}, dimsout[] = {kCategoryCount};
-
-	TF_Tensor *in;
-
-	// expected input: 10x49 8b MFCC
-	len = kKwsInputSize * sizeof(int8_t);
-	n = ee_get_buffer(bufin, len);
-	if(n != len)
-		fatale("ee_get_buffer: short read");
-	for(int i = 0; i < kKwsInputSize; i++) {
-		buft[i] = (float)bufin[i];
-	}
-
-	len = kKwsInputSize * sizeof(float);
-	in = TF_NewTensor(TF_FLOAT, dimsin, 2, buft, len, tf_dealloc, NULL);
-	if(in == NULL)
-		fatale("input tensor allocation failure");
-	tin[0] = (TF_Tensor*){in};
-
-	/* I believe I do not have to do anything with it, TF_SessionRun will
-	 * allocate memory for the tensors which I must free upon usage.
-	len = kCategoryCount * sizeof(float);
-	out = TF_NewTensor(TF_FLOAT, dimsout, 1, bufout, len, tf_dealloc, NULL);
-	if(in == NULL)
-		fatale("output tensor allocation failure");
-	tout = {out};
-	*/
-}
-
-// Implement this method with the logic to perform one inference cycle.
-void
-th_infer() {
-	TF_SessionRun(
-		sess, NULL,
-		ndin, tin, 1,
-		ndout, tout, 1,
-		NULL, 0,
-		NULL,
-		s
-	);
-	if(TF_GetCode(s) != TF_OK) {
-		fatale(TF_Message(s));
-	}
-}
-
-void
-th_post() {
+tf_free() {
 	TF_DeleteGraph(g);
 	TF_DeleteSessionOptions(opts);
 
@@ -195,8 +130,102 @@ th_post() {
 		fatale(TF_Message(s));
 	}
 
-	/* TODO: delete tensors
-	TF_DeleteTensor(tin); */
+	TF_DeleteTensor(tin[0]);
+	TF_DeleteTensor(tout[0]);
+}
+
+void
+th_post() {
+}
+
+// Add to this method to return real inference results.
+void
+th_results() {
+	float *ptr;
+	TF_Tensor *t;
+
+	fprintf(stderr, "th_results called!\n");
+
+	t = *tout;
+	if(t == NULL)
+		fatale("output tensor is empty");
+
+	if(TF_TensorElementCount(t) != kCategoryCount)
+		fatale("unexpected tensor element count");
+
+	ptr = (float*)TF_TensorData(t);
+
+	th_printf("m-results-[");
+	for (int i = 0; i < kCategoryCount; i++) {
+		fprintf(stderr, "res(%d,%s) -> %.8f\n", i, kCategoryLabels[i], *ptr);
+		th_printf("%f", *ptr++);
+		if (i < (kCategoryCount - 1)) {
+			th_printf(",");
+		}
+	}
+	th_printf("]\r\n");
+}
+
+void
+tf_dealloc(void *data, size_t len, void *arg) {
+	// Buffer is not dynamically allocated hence does not need to be
+	// freed.
+}
+
+int8_t bufin[kKwsInputSize];
+float buft[kKwsInputSize];
+float bufout[kCategoryCount];
+
+// Implement this method to prepare for inference and preprocess inputs.
+void
+th_load_tensor() {
+	static int nload = 0;
+	size_t n, len;
+	int64_t dimsin[] = {1, kNumRows, kNumCols, 1};
+	int64_t dimsout[] = {1, kCategoryCount};
+	TF_Tensor *in, *out;
+
+	fprintf(stderr, "%d: th_load_tendor called!\n", nload++);
+
+	// expected input: 10x49 8b MFCC
+	len = kKwsInputSize * sizeof(int8_t);
+	n = ee_get_buffer(bufin, len);
+	if(n != len)
+		fatale("ee_get_buffer: short read");
+	for(int i = 0; i < kKwsInputSize; i++) {
+		buft[i] = (float)bufin[i];
+	}
+
+	len = kKwsInputSize * sizeof(float);
+	in = TF_NewTensor(TF_FLOAT, dimsin, 4, buft, len, tf_dealloc, NULL);
+	if(in == NULL)
+		fatale("input tensor allocation failure");
+	tin[0] = (TF_Tensor*){in};
+
+	len = kCategoryCount * sizeof(float);
+	out = TF_AllocateTensor(TF_FLOAT, dimsout, 2, len);
+	if(out == NULL)
+		fatale("output tensor allocation failure");
+	tout[0] = (TF_Tensor*){out};
+}
+
+// Implement this method with the logic to perform one inference cycle.
+void
+th_infer() {
+	static int ninfer = 0;
+
+	fprintf(stderr, "%d: th_infer called!\n", ninfer++);
+	TF_SessionRun(
+		sess, NULL,
+		ndin, tin, 1,
+		ndout, tout, 1,
+		NULL, 0,
+		NULL,
+		s
+	);
+	if(TF_GetCode(s) != TF_OK) {
+		fatale(TF_Message(s));
+	}
 }
 
 void
@@ -287,19 +316,31 @@ th_getchar() {
 
 int
 usage(char *name) {
-	fprintf(stderr, "usage: %s [model dir] [serial device, e.g. /dev/ttyPS0]", name);
+	fprintf(stderr, "usage: %s -d [model dir] -l [serial device, e.g. /dev/ttyPS0]\n", name);
 	exit(2);
 }
 
 int
 main(int argc, char *argv[]) {
-	if(argc < 2) {
-		usage(argv[0]);
-	}
-	model_dir = argv[1];
-	line = argv[2];
+	int opt;
 
-	printf("Hello from TensorFlow C library version %s\n", TF_Version());
+	model_dir = "kws_ref_model";
+	line = "/dev/ttyTHS1";
+	while((opt = getopt(argc, argv, "d:l:")) != -1) {
+		switch(opt) {
+		case 'd':
+			model_dir = optarg;
+			break;
+		case 'l':
+			line = optarg;
+			break;
+		default:
+			printf("opt=%c optarg=%s\n", opt, optarg);
+			usage(*argv);
+		}
+	}
+
+	fprintf(stderr, "line=%s model_dir=%s tf=%s\n", line, model_dir, TF_Version());
 
 	ee_benchmark_initialize();
 	while (1) {

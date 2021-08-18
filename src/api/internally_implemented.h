@@ -27,15 +27,15 @@ The file name has been changed and some functions removed.
 /// \file
 /// \brief Internally-implemented methods required to perform inference.
 
-#include <stddef.h>
-#include <stdint.h>
-
 #ifndef MLPERF_TINY_V0_1_API_INTERNALLY_IMPLEMENTED_H_
 #define MLPERF_TINY_V0_1_API_INTERNALLY_IMPLEMENTED_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stddef.h>
+#include <stdint.h>
 
 #define EE_MONITOR_VERSION "2.2.0"
 #define EE_FW_VERSION "ULPMark for tinyML Firmware V0.0.1"
