@@ -72,7 +72,7 @@ th_final_initialize(void) {
 
 void
 tf_load(uint8_t *buf, size_t n) {
-	size_t len = n * sizeof(buf);
+	size_t len = n * sizeof(float);
 	int64_t dimsi[] = {1, kNumRows, kNumCols, 1};
 	int64_t dimso[] = {1, kCategoryCount};
 

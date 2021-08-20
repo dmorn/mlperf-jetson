@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <time.h>
+#include <ctype.h>
+#include <stdio.h>
 
 #include "api/submitter_implemented.h"
 #include "api/internally_implemented.h"
@@ -35,20 +37,21 @@ th_serialport_initialize(void) {
 	fprintf(stderr, "initializing serial port..");
 
 	// Note the port is never closed.
-	if((port = open(line, O_RDWR)) < 0) {
+	// https://en.wikibooks.org/wiki/Serial_Programming/termios
+	if((port = open(line, O_RDWR|O_NOCTTY|O_NDELAY)) < 0)
 		fatalep("th_serialport_initialize");
-	}
-	if(tcgetattr(port, &tty) != 0) {
+	if(tcgetattr(port, &tty) != 0)
 		fatalep("th_serialport_initialize");
-	}
+
 	cfmakeraw(&tty);
 	cfsetispeed(&tty, B115200);
 	cfsetospeed(&tty, B115200);
-
-	if(tcsetattr(port, TCSANOW, &tty) != 0) {
+	
+	// Apply configuration.
+	if(tcsetattr(port, TCSANOW, &tty) != 0)
 		fatalep("th_serialport_initialize");
-	}
-	tcflush(port, TCIOFLUSH);
+	if(tcflush(port, TCIOFLUSH) != 0)
+		fatalep("th_serialport_initialize");
 
 	fprintf(stderr, ".done\n");
 }
