@@ -171,3 +171,8 @@ th_infer() {
 		fatale(TF_Message(s));
 	}
 }
+
+char*
+tf_version(void) {
+	return TF_Version();
+}
