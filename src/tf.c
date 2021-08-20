@@ -35,28 +35,6 @@ static TF_Tensor *tfi[1], *tfo[1];
 void fatale(char *s);
 
 void
-tf_load(uint8_t *buf, size_t n) {
-	size_t len = n * sizeof(buf);
-	int64_t dimsi[] = {1, kNumRows, kNumCols, 1};
-	int64_t dimso[] = {1, kCategoryCount};
-
-	// Input tensor
-	*tfi = TF_AllocateTensor(TF_FLOAT, dimsi, 4, len);
-	if(*tfi == NULL)
-		fatale("input tensor allocation failure");
-
-	for(float *p = (float*) TF_TensorData(*tfi); n > 0; n--) {
-		*p++ = (float) (*(buf++));
-	}
-
-	// Output tensor
-	len = kCategoryCount * sizeof(float);
-	*tfo = TF_AllocateTensor(TF_FLOAT, dimso, 2, len);
-	if(*tfo == NULL)
-		fatale("output tensor allocation failure");
-}
-
-void
 th_final_initialize(void) {
 	/* 
 	inputs['input_1'] tensor_info:
@@ -92,49 +70,26 @@ th_final_initialize(void) {
 	fprintf(stderr, "** READY\n");
 }
 
-
 void
-tf_free() {
-	TF_DeleteGraph(g);
-	TF_DeleteSessionOptions(opts);
+tf_load(uint8_t *buf, size_t n) {
+	size_t len = n * sizeof(buf);
+	int64_t dimsi[] = {1, kNumRows, kNumCols, 1};
+	int64_t dimso[] = {1, kCategoryCount};
 
-	TF_CloseSession(sess, s);
-	if(TF_GetCode(s) != TF_OK) {
-		fatale(TF_Message(s));
+	// Input tensor
+	*tfi = TF_AllocateTensor(TF_FLOAT, dimsi, 4, len);
+	if(*tfi == NULL)
+		fatale("input tensor allocation failure");
+
+	for(float *p = (float*) TF_TensorData(*tfi); n > 0; n--) {
+		*p++ = (float) (*(buf++));
 	}
-	TF_DeleteSession(sess, s);
-	if(TF_GetCode(s) != TF_OK) {
-		fatale(TF_Message(s));
-	}
 
-	TF_DeleteTensor(*tfi);
-	TF_DeleteTensor(*tfo);
-}
-
-void
-th_results() {
-	float *p;
-
-	fprintf(stderr, "th_results called!\n");
-
+	// Output tensor
+	len = kCategoryCount * sizeof(float);
+	*tfo = TF_AllocateTensor(TF_FLOAT, dimso, 2, len);
 	if(*tfo == NULL)
-		fatale("output tensor is empty");
-	if(TF_TensorElementCount(*tfo) != kCategoryCount)
-		fatale("unexpected tensor element count");
-
-	p = (float*)TF_TensorData(*tfo);
-
-	th_printf("m-results-[");
-	for (int i = 0; i < kCategoryCount; i++) {
-		fprintf(stderr, "res(%d,%s) -> %.8f\n", i, kCategoryLabels[i], *p);
-		th_printf("%f", *p++);
-		if (i < (kCategoryCount - 1)) {
-			th_printf(",");
-		}
-	}
-	th_printf("]\r\n");
-
-	// TODO: free up everything? Not if infer is called before a load.
+		fatale("output tensor allocation failure");
 }
 
 void
@@ -170,6 +125,50 @@ th_infer() {
 	if(TF_GetCode(s) != TF_OK) {
 		fatale(TF_Message(s));
 	}
+}
+
+void
+th_results() {
+	float *p;
+
+	fprintf(stderr, "th_results called!\n");
+
+	if(*tfo == NULL)
+		fatale("output tensor is empty");
+	if(TF_TensorElementCount(*tfo) != kCategoryCount)
+		fatale("unexpected tensor element count");
+
+	p = (float*)TF_TensorData(*tfo);
+
+	th_printf("m-results-[");
+	for (int i = 0; i < kCategoryCount; i++) {
+		fprintf(stderr, "res(%d,%s) -> %.8f\n", i, kCategoryLabels[i], *p);
+		th_printf("%f", *p++);
+		if (i < (kCategoryCount - 1)) {
+			th_printf(",");
+		}
+	}
+	th_printf("]\r\n");
+
+	// TODO: free up everything? Not if infer is called before a load.
+}
+
+void
+tf_free() {
+	TF_DeleteGraph(g);
+	TF_DeleteSessionOptions(opts);
+
+	TF_CloseSession(sess, s);
+	if(TF_GetCode(s) != TF_OK) {
+		fatale(TF_Message(s));
+	}
+	TF_DeleteSession(sess, s);
+	if(TF_GetCode(s) != TF_OK) {
+		fatale(TF_Message(s));
+	}
+
+	TF_DeleteTensor(*tfi);
+	TF_DeleteTensor(*tfo);
 }
 
 char*
