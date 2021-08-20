@@ -48,6 +48,7 @@ th_serialport_initialize(void) {
 	if(tcsetattr(port, TCSANOW, &tty) != 0) {
 		fatalep("th_serialport_initialize");
 	}
+	tcflush(port, TCIOFLUSH);
 
 	fprintf(stderr, ".done\n");
 }
@@ -69,6 +70,7 @@ void th_post() {}
 
 void
 th_command_ready(char volatile *p_command) {
+	fprintf(stderr, "executing: [%s]\n", p_command);
 	p_command = p_command;
 	ee_serial_command_parser_callback((char *)p_command);
 }
@@ -114,8 +116,8 @@ main(int argc, char *argv[]) {
 	ee_benchmark_initialize();
 	while (1) {
 		int c;
-		c = th_getchar();
-		fprintf(stderr, "char: [%c]\n", c);
+		if((c = th_getchar()) == '\0')
+			continue;
 		ee_serial_callback(c);
 	}
 	return 0;

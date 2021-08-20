@@ -53,7 +53,7 @@ th_memcpy(void *dst, const void *src, size_t n) {
 int
 th_vprintf(const char *format, va_list ap) {
 	int vdprintf(int __fd, const char *__restrict __fmt, __gnuc_va_list __arg);
-	// vdprintf(2, format, ap);
+	vdprintf(2, format, ap);
 	return vdprintf(port, format, ap);
 }
 
