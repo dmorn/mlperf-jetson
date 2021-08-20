@@ -19,9 +19,11 @@
 #define kKwsInputSize kNumCols * kNumRows * kNumChannels
 #define kCategoryCount 12
 
-int port;
+#define kSerialBufSize 256
+int sfd;
+
 char *line;
-const char *model_dir;
+char *model_dir;
 const char *tags = "serve";
 
 char* kCategoryLabels[kCategoryCount] = {
@@ -29,10 +31,65 @@ char* kCategoryLabels[kCategoryCount] = {
 	"right", "stop", "up", "yes", "silence", "unknown"
 };
 
+static TF_Status *s;
+static TF_Session *sess;
+static TF_Graph* g;
+static TF_SessionOptions *opts;
+
+// Sizes are model specific.
+static TF_Output ndi[1], ndo[1];
+static TF_Tensor *tfi[1], *tfo[1];
+
 void
 fatale(char *s) {
 	fprintf(stderr, "\nerror: %s\n", s);
 	exit(1);
+}
+
+void
+fatalep(char *s) {
+	perror(s);
+	exit(1);
+}
+
+void
+tf_load(int8_t *buf, size_t n) {
+	size_t len = n * sizeof(buf);
+	int64_t dimsi[] = {1, kNumRows, kNumCols, 1};
+	int64_t dimso[] = {1, kCategoryCount};
+
+	// Input tensor
+	*tfi = TF_AllocateTensor(TF_FLOAT, dimsi, 4, len);
+	if(*tfi == NULL)
+		fatale("input tensor allocation failure");
+
+	for(float *p = (float*) TF_TensorData(*tfi); n > 0; n--) {
+		*p++ = (float) (*(buf++));
+	}
+
+	// Output tensor
+	len = kCategoryCount * sizeof(float);
+	*tfo = TF_AllocateTensor(TF_FLOAT, dimso, 2, len);
+	if(*tfo == NULL)
+		fatale("output tensor allocation failure");
+}
+
+void
+tf_free() {
+	TF_DeleteGraph(g);
+	TF_DeleteSessionOptions(opts);
+
+	TF_CloseSession(sess, s);
+	if(TF_GetCode(s) != TF_OK) {
+		fatale(TF_Message(s));
+	}
+	TF_DeleteSession(sess, s);
+	if(TF_GetCode(s) != TF_OK) {
+		fatale(TF_Message(s));
+	}
+
+	TF_DeleteTensor(*tfi);
+	TF_DeleteTensor(*tfo);
 }
 
 void
@@ -43,18 +100,18 @@ th_serialport_initialize(void) {
 	fprintf(stderr, "initializing serial port..");
 
 	// Note the port is never closed.
-	if((port = open(line, O_RDWR)) < 0) {
-		fatale("th_serialport_initialize");
+	if((sfd = open(line, O_RDWR)) < 0) {
+		fatalep("th_serialport_initialize");
 	}
-	if(tcgetattr(port, &tty) != 0) {
-		fatale("th_serialport_initialize");
+	if(tcgetattr(sfd, &tty) != 0) {
+		fatalep("th_serialport_initialize");
 	}
 	cfmakeraw(&tty);
 	cfsetispeed(&tty, B115200);
 	cfsetospeed(&tty, B115200);
 
-	if(tcsetattr(port, TCSANOW, &tty) != 0) {
-		fatale("th_serialport_initialize");
+	if(tcsetattr(sfd, TCSANOW, &tty) != 0) {
+		fatalep("th_serialport_initialize");
 	}
 
 	fprintf(stderr, ".done\n");
@@ -71,14 +128,6 @@ th_timestamp_initialize(void) {
 	is set to "1" (so that we catch a falling edge) */
 	th_timestamp();
 }
-
-TF_Status *s;
-TF_Session *sess;
-TF_Graph* g;
-TF_SessionOptions *opts;
-
-TF_Output ndin[1], ndout[1];
-TF_Tensor *tin[1], *tout[1];
 
 void
 th_final_initialize(void) {
@@ -104,34 +153,16 @@ th_final_initialize(void) {
 		fatale(TF_Message(s));
 	}
 
-	ndin[0] = (TF_Output){TF_GraphOperationByName(g,  "serving_default_input_1"), 0}; 
-	if(ndin[0].oper == NULL)
-		fatale("serving_default_input_1 not found within graph");
+	if((ndi->oper = TF_GraphOperationByName(g, "serving_default_input_1")) == NULL)
+		fatale("input operation not found within graph");
+	ndi->index = 0;
 
-	ndout[0] = (TF_Output){TF_GraphOperationByName(g, "StatefulPartitionedCall"), 0};
-	if(ndout[0].oper == NULL)
-		fatale("StatefulPartitionedCall not found within graph");
+	if((ndo->oper = TF_GraphOperationByName(g, "StatefulPartitionedCall")) == NULL)
+		fatale("output operation not found within graph");
+	ndo->index = 0;
 
 	fprintf(stderr, ".done\n");
 	fprintf(stderr, "** READY\n");
-}
-
-void
-tf_free() {
-	TF_DeleteGraph(g);
-	TF_DeleteSessionOptions(opts);
-
-	TF_CloseSession(sess, s);
-	if(TF_GetCode(s) != TF_OK) {
-		fatale(TF_Message(s));
-	}
-	TF_DeleteSession(sess, s);
-	if(TF_GetCode(s) != TF_OK) {
-		fatale(TF_Message(s));
-	}
-
-	TF_DeleteTensor(tin[0]);
-	TF_DeleteTensor(tout[0]);
 }
 
 void
@@ -141,72 +172,47 @@ th_post() {
 // Add to this method to return real inference results.
 void
 th_results() {
-	float *ptr;
-	TF_Tensor *t;
+	float *p;
 
 	fprintf(stderr, "th_results called!\n");
 
-	t = *tout;
-	if(t == NULL)
+	if(*tfo == NULL)
 		fatale("output tensor is empty");
-
-	if(TF_TensorElementCount(t) != kCategoryCount)
+	if(TF_TensorElementCount(*tfo) != kCategoryCount)
 		fatale("unexpected tensor element count");
 
-	ptr = (float*)TF_TensorData(t);
+	p = (float*)TF_TensorData(*tfo);
 
 	th_printf("m-results-[");
 	for (int i = 0; i < kCategoryCount; i++) {
-		fprintf(stderr, "res(%d,%s) -> %.8f\n", i, kCategoryLabels[i], *ptr);
-		th_printf("%f", *ptr++);
+		fprintf(stderr, "res(%d,%s) -> %.8f\n", i, kCategoryLabels[i], *p);
+		th_printf("%f", *p++);
 		if (i < (kCategoryCount - 1)) {
 			th_printf(",");
 		}
 	}
 	th_printf("]\r\n");
-}
 
-void
-tf_dealloc(void *data, size_t len, void *arg) {
-	// Buffer is not dynamically allocated hence does not need to be
-	// freed.
+	// TODO: free up everything? Not if infer is called before a load.
 }
-
-int8_t bufin[kKwsInputSize];
-float buft[kKwsInputSize];
-float bufout[kCategoryCount];
 
 // Implement this method to prepare for inference and preprocess inputs.
 void
 th_load_tensor() {
 	static int nload = 0;
+	int8_t buf[kKwsInputSize];
 	size_t n, len;
-	int64_t dimsin[] = {1, kNumRows, kNumCols, 1};
-	int64_t dimsout[] = {1, kCategoryCount};
-	TF_Tensor *in, *out;
+	void tf_load(int8_t*, size_t);
 
-	fprintf(stderr, "%d: th_load_tendor called!\n", nload++);
+	fprintf(stderr, "%d: th_load_tensor called!\n", nload++);
 
 	// expected input: 10x49 8b MFCC
 	len = kKwsInputSize * sizeof(int8_t);
-	n = ee_get_buffer(bufin, len);
+	n = ee_get_buffer(buf, len);
 	if(n != len)
 		fatale("ee_get_buffer: short read");
-	for(int i = 0; i < kKwsInputSize; i++) {
-		buft[i] = (float)bufin[i];
-	}
 
-	len = kKwsInputSize * sizeof(float);
-	in = TF_NewTensor(TF_FLOAT, dimsin, 4, buft, len, tf_dealloc, NULL);
-	if(in == NULL)
-		fatale("input tensor allocation failure");
-	tin[0] = (TF_Tensor*){in};
-
-	len = kCategoryCount * sizeof(float);
-	out = TF_AllocateTensor(TF_FLOAT, dimsout, 2, len);
-	if(out == NULL)
-		fatale("output tensor allocation failure");
-	tout[0] = (TF_Tensor*){out};
+	tf_load(buf, kKwsInputSize);
 }
 
 // Implement this method with the logic to perform one inference cycle.
@@ -217,8 +223,8 @@ th_infer() {
 	fprintf(stderr, "%d: th_infer called!\n", ninfer++);
 	TF_SessionRun(
 		sess, NULL,
-		ndin, tin, 1,
-		ndout, tout, 1,
+		ndi, tfi, 1,
+		ndo, tfo, 1,
 		NULL, 0,
 		NULL,
 		s
@@ -293,7 +299,8 @@ th_timestamp(void) {
 int
 th_vprintf(const char *format, va_list ap) {
 	int vdprintf(int __fd, const char *__restrict __fmt, __gnuc_va_list __arg);
-	return vdprintf(port, format, ap);
+	// vdprintf(2, format, ap);
+	return vdprintf(sfd, format, ap);
 }
 
 void
@@ -306,12 +313,17 @@ th_printf(const char *p_fmt, ...) {
 
 char
 th_getchar() {
-	static char buf[1];
-	if(read(port, buf, sizeof(buf)) < 0) {
+	static char buf[kSerialBufSize];
+	static size_t idx = 0, n = 0;
+
+	if(idx < n)
+		return buf[idx++];
+
+	if((n = read(sfd, buf, kSerialBufSize)) < 0) {
 		fatale("th_getchar");
 	}
-	// printf("debug: th_getchar: %c\n", buf[0]);
-	return buf[0];
+	idx = 0;
+	return buf[idx++];
 }
 
 int
@@ -346,6 +358,7 @@ main(int argc, char *argv[]) {
 	while (1) {
 		int c;
 		c = th_getchar();
+		fprintf(stderr, "char: [%c]\n", c);
 		ee_serial_callback(c);
 	}
 	return 0;
