@@ -62,3 +62,8 @@ Method name is: tensorflow/serving/predict
 - https://www.tensorflow.org/guide/saved_model#load_a_savedmodel_in_c
 - https://medium.com/@vladislavsd/undocumented-tensorflow-c-api-b527c0b4ef6
 - https://docs.nvidia.com/deeplearning/frameworks/install-tf-jetson-platform/index.html
+- https://blog.tensorflow.org/2021/01/leveraging-tensorflow-tensorrt-integration.html
+- https://docs.nvidia.com/deeplearning/tensorrt/quick-start-guide/index.html
+- https://developer.nvidia.com/blog/tensorrt-integration-speeds-tensorflow-inference/
+- https://blog.tensorflow.org/2018/04/speed-up-tensorflow-inference-on-gpus-tensorRT.html
+- https://docs.google.com/spreadsheets/d/e/2PACX-1vRhSPeEz1n6njCaWoATCDs2cbeG4hBGVkTzOhuXM4WCWaIogR9ialmai0VJ23WXWh_7VlI9w7O0wq2L/pubhtml?gid=0&single=false&widget=false&headers=false&chrome=true#
