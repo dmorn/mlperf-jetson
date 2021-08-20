@@ -4,9 +4,6 @@
 #include <termios.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <stdlib.h>
 #include <time.h>
 
 #include "api/submitter_implemented.h"
@@ -15,6 +12,8 @@
 int port;
 char *line;
 char *model_dir;
+
+char* tf_version(void);
 
 void
 fatale(char *s) {
@@ -110,7 +109,7 @@ main(int argc, char *argv[]) {
 		}
 	}
 
-	fprintf(stderr, "line=%s model_dir=%s tf=%s\n", line, model_dir, TF_Version());
+	fprintf(stderr, "line=%s model_dir=%s tf=%s\n", line, model_dir, tf_version());
 
 	ee_benchmark_initialize();
 	while (1) {
