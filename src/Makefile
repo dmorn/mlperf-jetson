@@ -14,7 +14,7 @@ RM = rm -f
 ARFLAGS := -csr
 
 CPPSRCS += api/internally_implemented.cpp
-CCSRCS += main.c
+CCSRCS += main.c tf.c stdlib.c
 
 OBJS += $(patsubst %.cpp,%.o,$(CPPSRCS))
 OBJS += $(patsubst %.c,%.o,$(CCSRCS))
