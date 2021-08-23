@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <time.h>
+#include <ctype.h>
+#include <stdio.h>
 
 #include "api/submitter_implemented.h"
 #include "api/internally_implemented.h"
@@ -35,19 +37,30 @@ th_serialport_initialize(void) {
 	fprintf(stderr, "initializing serial port..");
 
 	// Note the port is never closed.
-	if((port = open(line, O_RDWR)) < 0) {
+	// https://www.cmrr.umn.edu/~strupp/serial.html#2_1
+	if((port = open(line, O_RDWR | O_NOCTTY | O_NDELAY)) < 0)
 		fatalep("th_serialport_initialize");
-	}
-	if(tcgetattr(port, &tty) != 0) {
+	// Blocking reads.
+	fcntl(port, F_SETFL, 0);
+
+	if(tcgetattr(port, &tty) != 0)
 		fatalep("th_serialport_initialize");
-	}
-	cfmakeraw(&tty);
+
+	// Baud
 	cfsetispeed(&tty, B115200);
 	cfsetospeed(&tty, B115200);
-
-	if(tcsetattr(port, TCSANOW, &tty) != 0) {
+	// 8N1
+	tty.c_cflag &= ~(PARENB | CSTOPB | CSIZE);
+	tty.c_cflag |= CS8;
+	// Quoting docs: The c_cflag member contains two options that should
+	// always be enabled, CLOCAL and CREAD.
+	tty.c_cflag |= (CLOCAL | CREAD);
+	// Raw i/o
+	tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+	tty.c_oflag &= ~OPOST;
+	
+	if(tcsetattr(port, TCSAFLUSH, &tty) != 0)
 		fatalep("th_serialport_initialize");
-	}
 
 	fprintf(stderr, ".done\n");
 }
@@ -69,7 +82,7 @@ void th_post() {}
 
 void
 th_command_ready(char volatile *p_command) {
-	p_command = p_command;
+	// p_command = p_command;
 	ee_serial_command_parser_callback((char *)p_command);
 }
 
@@ -94,7 +107,7 @@ main(int argc, char *argv[]) {
 	int opt;
 
 	model_dir = "kws_ref_model";
-	line = "/dev/ttyTHS1";
+	line = "/dev/ttyGS0";
 	while((opt = getopt(argc, argv, "d:l:")) != -1) {
 		switch(opt) {
 		case 'd':
@@ -114,8 +127,10 @@ main(int argc, char *argv[]) {
 	ee_benchmark_initialize();
 	while (1) {
 		int c;
-		c = th_getchar();
-		fprintf(stderr, "char: [%c]\n", c);
+		if(!isprint(c = th_getchar()) || c == '\0') {
+			fprintf(stderr, "discarding [%c]\n", c);
+			continue;
+		}
 		ee_serial_callback(c);
 	}
 	return 0;

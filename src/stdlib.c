@@ -5,9 +5,25 @@
 #include <string.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <stdio.h> // Remove after debugging
 
 extern int port;
 void fatalep(char *s);
+
+char
+th_getchar() {
+	char c;
+	ssize_t n;
+
+	n = read(port, &c, 1);
+	switch(n) {
+	case -1:
+	case 0:
+		fatalep("th_getchar");
+	default:
+		return c;
+	}
+}
 
 int
 th_strncmp(const char *str1, const char *str2, size_t n) {
@@ -53,7 +69,7 @@ th_memcpy(void *dst, const void *src, size_t n) {
 int
 th_vprintf(const char *format, va_list ap) {
 	int vdprintf(int __fd, const char *__restrict __fmt, __gnuc_va_list __arg);
-	// vdprintf(2, format, ap);
+	vdprintf(2, format, ap);
 	return vdprintf(port, format, ap);
 }
 
@@ -63,19 +79,4 @@ th_printf(const char *p_fmt, ...) {
 	va_start(args, p_fmt);
 	(void)th_vprintf(p_fmt, args); /* ignore return */
 	va_end(args);
-}
-
-char
-th_getchar() {
-	static char buf[256];
-	static size_t idx = 0, n = 0;
-
-	if(idx < n)
-		return buf[idx++];
-
-	if((n = read(port, buf, sizeof(buf))) < 0) {
-		fatalep("th_getchar");
-	}
-	idx = 0;
-	return buf[idx++];
 }

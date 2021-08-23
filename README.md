@@ -18,8 +18,10 @@ PM CEST) will comply that it works only on ubuntu 18.xx.  Change
 /etc/os-release VERSION_ID field to "18.04" and use it happily. Remember to
 revert the change afterwards.
 
-The serial line used is the one accessible through pins 8,10 of J41. In my
-case, the associated device is `/dev/ttyTHS1`.
+~~The serial line used is the one accessible through pins 8,10 of J41. In my
+case, the associated device is `/dev/ttyTHS1`.~~
+I'm using the microusb port now. It is more reliable, you just have to remember
+stopping the getty service on it, see below. The device is `/dev/ttyGS0`.
 
 The dtb is tegra210-p3448-0000-p3449-0000-a02.dtb. Extract the source issuing something like
 ```
@@ -31,8 +33,9 @@ was referencing to that specific device (it must be an alias). Anyway
 ```
 % systemctl stop serial-getty@ttyS0.service
 % systemctl stop serial-getty@ttyGS0.service
+% systemctl stop nvgetty.service 
 ```
-
+suffices if you have to stop a specific getty service.
 
 ## About the model
 ```
