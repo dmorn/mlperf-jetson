@@ -46,22 +46,19 @@ th_serialport_initialize(void) {
 	if(tcgetattr(port, &tty) != 0)
 		fatalep("th_serialport_initialize");
 
-	// 8N1
-	tty.c_cflag &= ~(PARENB | CSTOPB | CSIZE);
-	tty.c_cflag |= CS8;
 	// Baud
 	cfsetispeed(&tty, B115200);
 	cfsetospeed(&tty, B115200);
+	// 8N1
+	tty.c_cflag &= ~(PARENB | CSTOPB | CSIZE);
+	tty.c_cflag |= CS8;
+	// Quoting docs: The c_cflag member contains two options that should
+	// always be enabled, CLOCAL and CREAD.
+	tty.c_cflag |= (CLOCAL | CREAD);
 	// Raw i/o
 	tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
 	tty.c_oflag &= ~OPOST;
-
-	tty.c_cflag |= (CLOCAL | CREAD);
 	
-	/* Apply configuration. Flushing the line before proceeding would be
- 	 * great, unfortunately tcflush(port, TCIOFLUSH) makes no difference
- 	 * apparently.
-	 */
 	if(tcsetattr(port, TCSAFLUSH, &tty) != 0)
 		fatalep("th_serialport_initialize");
 
