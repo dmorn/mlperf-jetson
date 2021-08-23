@@ -37,20 +37,32 @@ th_serialport_initialize(void) {
 	fprintf(stderr, "initializing serial port..");
 
 	// Note the port is never closed.
-	// https://en.wikibooks.org/wiki/Serial_Programming/termios
-	if((port = open(line, O_RDWR|O_NOCTTY|O_NDELAY)) < 0)
+	// https://www.cmrr.umn.edu/~strupp/serial.html#2_1
+	if((port = open(line, O_RDWR | O_NOCTTY | O_NDELAY)) < 0)
 		fatalep("th_serialport_initialize");
+	// Blocking reads.
+	fcntl(port, F_SETFL, 0);
+
 	if(tcgetattr(port, &tty) != 0)
 		fatalep("th_serialport_initialize");
 
-	cfmakeraw(&tty);
+	// 8N1
+	tty.c_cflag &= ~(PARENB | CSTOPB | CSIZE);
+	tty.c_cflag |= CS8;
+	// Baud
 	cfsetispeed(&tty, B115200);
 	cfsetospeed(&tty, B115200);
+	// Raw i/o
+	tty.c_lflag &= ~(ICANON | ECHO | ECHOE | ISIG);
+	tty.c_oflag &= ~OPOST;
+
+	tty.c_cflag |= (CLOCAL | CREAD);
 	
-	// Apply configuration.
-	if(tcsetattr(port, TCSANOW, &tty) != 0)
-		fatalep("th_serialport_initialize");
-	if(tcflush(port, TCIOFLUSH) != 0)
+	/* Apply configuration. Flushing the line before proceeding would be
+ 	 * great, unfortunately tcflush(port, TCIOFLUSH) makes no difference
+ 	 * apparently.
+	 */
+	if(tcsetattr(port, TCSAFLUSH, &tty) != 0)
 		fatalep("th_serialport_initialize");
 
 	fprintf(stderr, ".done\n");
@@ -73,7 +85,7 @@ void th_post() {}
 
 void
 th_command_ready(char volatile *p_command) {
-	p_command = p_command;
+	// p_command = p_command;
 	ee_serial_command_parser_callback((char *)p_command);
 }
 
@@ -118,8 +130,10 @@ main(int argc, char *argv[]) {
 	ee_benchmark_initialize();
 	while (1) {
 		int c;
-		if(!isprint(c = th_getchar()) || c == '\0')
+		if(!isprint(c = th_getchar()) || c == '\0') {
+			fprintf(stderr, "discarding [%c]\n", c);
 			continue;
+		}
 		ee_serial_callback(c);
 	}
 	return 0;
