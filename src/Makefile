@@ -32,24 +32,10 @@ $(BINDIR): ; mkdir -p $(BINDIR)
 %.o: %.c
 	$(CC) $(CCFLAGS) $(INCLUDES) -c $< -o $@
 
-runner: download_deps $(OBJS) $(BINDIR)
-	$(CXX) -o $(BINDIR)/$@ $(OBJS) $(LDFLAGS)
-
-runner_msan : download_deps $(OBJS)
-	$(CXX) $(CXXFLAGS) -fsanitize=memory -o $@ $(OBJS) $(LDFLAGS)
-
-runner_asan : download_deps $(OBJS)
-	$(CXX) $(CXXFLAGS) -fsanitize=address -o $@ $(OBJS) $(LDFLAGS)
-
-runner_ubsan : download_deps $(OBJS)
-	$(CXX) $(CXXFLAGS) -fsanitize=undefined -o $@ $(OBJS) $(LDFLAGS)
-
-download_deps:
-	$(DOWNLOAD_DEPS)
+$(BINDIR)/runner: $(OBJS) | $(BINDIR)
+	$(CXX) -o $@ $(OBJS) $(LDFLAGS)
+runner: $(BINDIR)/runner
 
 clean:
 	-$(RM) $(OBJS)
 	-$(RM) $(BINDIR)/runner
-
-clean_downloads:
-	$(RM) -r $(DOWNLOADS)
