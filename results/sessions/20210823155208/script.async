@@ -1,0 +1,32 @@
+[
+    {
+        cmd: 'umount'
+    },
+    {
+        cmd: 'mountc dut dut'
+    },
+    {
+        cmd: 'dut profile'
+    },
+    {
+        cmd: 'version'
+    },
+    {
+        cmd: 'bm cfg ulp-mlperf'
+    },
+    {
+        cmd: 'dut profile'
+    },
+    {
+        cmd: 'dut timestamp'
+    },
+    {
+        cmd: 'bload dut "/Users/danielmorandini/eembc/runner/benchmarks/ulp-mlperf/datasets/kws01/tst_000000_Stop_7.bin"',
+        ms: 7840
+    },
+    {
+        cmd: 'dut infer 2400 1',
+        ms: -1,
+        ack: /dut.?: m-ready/
+    }
+]

@@ -1,0 +1,94 @@
+======== Profiling result:
+            Type  Time(%)      Time     Calls       Avg       Min       Max  Name
+ GPU activities:   21.60%  5.58694s     48021  116.34us  38.231us  260.84us  void precomputed_convolve_sgemm<float, int=1024, int=5, int=5, int=4, int=3, int=3, int=1, bool=0>(int, int, int, float const *, int, float*, float const *, kernel_conv_params, __int64, int, float, float, int, float const *, float const *, int*)
+                   18.96%  4.90339s    108045  45.382us  14.844us  96.253us  void tensorflow::functor::FusedBatchNormInferenceMetaKernel<float, float, tensorflow::TensorFormat, bool=0, tensorflow::functor::FusedBatchNormActivationMode>(int, int, int, float const *, float const *, float const , float const , float const , float const , float, tensorflow::functor::FusedBatchNormInferenceMetaKernel<float, float, tensorflow::TensorFormat, bool=0, tensorflow::functor::FusedBatchNormActivationMode>*)
+                   16.11%  4.16699s    108045  38.567us  13.021us  84.430us  void tensorflow::BiasNCHWKernel<float>(int, float const *, float const , tensorflow::BiasNCHWKernel<float>*, int, int)
+                   13.00%  3.36314s     48020  70.036us  22.761us  151.26us  void tensorflow::DepthwiseConv2dGPUKernelNCHWSmall<float, tensorflow::DepthwiseConv2dDirection, int=3, int=3, int=8, bool=0>(tensorflow::DepthwiseArgs, float const *, float const , tensorflow::DepthwiseArgs*)
+                    7.49%  1.93844s     60025  32.293us  9.0110us  73.179us  void tensorflow::functor::ShuffleInTensor3Simple<float, int=2, int=1, int=0, bool=0>(int, float const *, tensorflow::functor::Dimension<int=3>, tensorflow::functor::ShuffleInTensor3Simple<float, int=2, int=1, int=0, bool=0>*)
+                    5.98%  1.54736s     12007  128.87us  52.919us  259.64us  void explicit_convolve_sgemm<float, int, int=128, int=6, int=7, int=3, int=3, int=5, int=0, bool=0>(int, int, int, float const *, int, float const *, int, float*, kernel_conv_params, __int64, int, __int64, int, float, float, int, float const *, float const *)
+                    4.31%  1.11576s     12007  92.925us  34.324us  192.25us  void cudnn::cnn::im2col4d_kernel<float, long>(cudnn::cnn::im2col4d_params, cudnnConvolutionStruct, cudnnTensorStruct, float const *, cudnnTensorStruct*)
+                    3.21%  829.90ms     48021  17.281us  5.6250us  40.886us  void cudnn::cnn::kern_precompute_indices<bool=0>(int*, int, int, int, int, int, int)
+                    3.02%  782.45ms     12005  65.176us  25.000us  136.10us  void cudnn::ops::pooling_fw_4d_kernel<float, float, cudnn::averpooling_func<float, bool=1>, cudnnPoolingMode_t=2, bool=0>(cudnnTensorStruct, float const *, cudnn::ops::pooling_fw_4d_kernel<float, float, cudnn::averpooling_func<float, bool=1>, cudnnPoolingMode_t=2, bool=0>, cudnnTensorStruct*, cudnnPoolingStruct, float, cudnnPoolingStruct, int, cudnn::reduced_divisor, float)
+                    1.70%  441.00ms        30  14.700ms  7.9199ms  42.667ms  redzone_checker
+                    1.09%  281.03ms     12005  23.409us  9.1150us  54.480us  void gemv2N_kernel<int, int, float, float, float, int=128, int=32, int=4, int=4, int=1, cublasGemvParams<cublasGemvTensor<float const >, cublasGemvTensor<float>, float>>(float const )
+                    0.83%  215.09ms     12005  17.916us  7.4480us  35.314us  void tensorflow::_GLOBAL__N__52_tmpxft_0000029a_00000000_6_softmax_op_gpu_cu_cpp1_ii_121a20ac::GenerateNormalizedProb<float, float, int=4>(float const *, float const *, float const , tensorflow::_GLOBAL__N__52_tmpxft_0000029a_00000000_6_softmax_op_gpu_cu_cpp1_ii_121a20ac::GenerateNormalizedProb<float, float, int=4>*, int, int, bool)
+                    0.69%  177.46ms     12005  14.781us  5.3120us  35.938us  void tensorflow::functor::PadInputCustomKernelNCHW<float, int=4>(int, float const *, tensorflow::functor::Dimension<int=4>, tensorflow::functor::PadInputCustomKernelNCHW<float, int=4>*, tensorflow::functor::Dimension, float const *)
+                    0.66%  170.40ms     12005  14.194us  5.3640us  30.781us  void tensorflow::functor::RowReduceKernel<cub::TransformInputIterator<float, tensorflow::_GLOBAL__N__52_tmpxft_0000029a_00000000_6_softmax_op_gpu_cu_cpp1_ii_121a20ac::SubtractAndExpFunctor<float, float>, cub::CountingInputIterator<int, long>, long>, float*, cub::Sum>(float, float, int, int, float, std::iterator_traits<tensorflow::functor::RowReduceKernel<cub::TransformInputIterator<float, tensorflow::_GLOBAL__N__52_tmpxft_0000029a_00000000_6_softmax_op_gpu_cu_cpp1_ii_121a20ac::SubtractAndExpFunctor<float, float>, cub::CountingInputIterator<int, long>, long>, float*, cub::Sum>>::value_type)
+                    0.46%  118.02ms     12005  9.8310us  3.6970us  21.146us  void tensorflow::BiasNHWCKernel<float>(int, float const *, float const , tensorflow::BiasNHWCKernel<float>*, int)
+                    0.44%  112.57ms     12005  9.3760us  3.4380us  19.635us  void tensorflow::functor::RowReduceKernel<float const *, float*, cub::Max>(float const *, float*, int, int, cub::Max, std::iterator_traits<tensorflow::functor::RowReduceKernel<float const *, float*, cub::Max>>::value_type)
+                    0.13%  32.815ms     12149  2.7010us     885ns  31.304us  [CUDA memcpy HtoD]
+                    0.12%  31.425ms        39  805.77us     833ns  5.0317ms  [CUDA memset]
+                    0.11%  27.207ms     12020  2.2630us     833ns  13.907us  [CUDA memcpy DtoH]
+                    0.05%  12.589ms         3  4.1964ms  4.1865ms  4.2145ms  void gemv2N_kernel<int, int, float2, float2, float2, int=128, int=8, int=4, int=4, int=1, cublasGemvParams<cublasGemvTensorStridedBatched<float2 const >, cublasGemvTensorStridedBatched<float2>, float2>>(float2 const )
+                    0.03%  6.5334ms         3  2.1778ms  57.606us  6.3487ms  void fft2d_r2c_32x32<float, bool=0, unsigned int=1, bool=0>(float2*, float const *, int, int, int, int, int, int, int, int, int, cudnn::reduced_divisor, bool, int2, int, int)
+                    0.01%  3.5433ms         1  3.5433ms  3.5433ms  3.5433ms  void gemv2T_kernel_val<int, int, float2, float2, float2, int=128, int=16, int=2, int=2, bool=0, cublasGemvParams<cublasGemvTensorStridedBatched<float2 const >, cublasGemvTensorStridedBatched<float2>, float2>>(float2 const , float2, float2)
+                    0.00%  554.13us         3  184.71us  131.15us  252.66us  void implicit_convolve_sgemm<float, float, int=1024, int=5, int=5, int=3, int=3, int=3, int=1, bool=0, bool=0, bool=1>(int, int, int, float const *, int, float*, float const *, kernel_conv_params, __int64, int, float, float, int, float const *, float const *, bool, int, int)
+                    0.00%  439.18us         3  146.39us  134.01us  153.18us  void fft2d_c2r_32x32<float, bool=1, bool=0, unsigned int=0, bool=0, bool=0>(float*, float2 const *, int, int, int, int, int, int, int, int, int, float, float, cudnn::reduced_divisor, bool, float*, float*, int2, int, int)
+                    0.00%  251.41us         1  251.41us  251.41us  251.41us  maxwell_gcgemm_32x32_nt
+                    0.00%  234.44us         1  234.44us  234.44us  234.44us  void fft1d_r2c_32<float, float, float2, bool=1, bool=0>(float2*, float const *, int, int3, int3, int2, int2)
+                    0.00%  233.24us         1  233.24us  233.24us  233.24us  void flip_filter<float, float>(float*, float const *, int, int, int, int)
+                    0.00%  190.42us         1  190.42us  190.42us  190.42us  void fft2d_r2c_32x32<float, bool=0, unsigned int=1, bool=1>(float2*, float const *, int, int, int, int, int, int, int, int, int, cudnn::reduced_divisor, bool, int2, int, int)
+                    0.00%  114.22us         1  114.22us  114.22us  114.22us  void fft1d_r2c_32<float, float, float2, bool=0, bool=0>(float2*, float const *, int, int3, int3, int2, int2)
+                    0.00%  109.74us         1  109.74us  109.74us  109.74us  void fft2d_c2r_32x32<float, bool=0, bool=0, unsigned int=1, bool=0, bool=0>(float*, float2 const *, int, int, int, int, int, int, int, int, int, float, float, cudnn::reduced_divisor, bool, float*, float*, int2, int, int)
+                    0.00%  100.89us         2  50.443us  48.386us  52.501us  void fft2d_r2c_32x32<float, bool=0, unsigned int=0, bool=0>(float2*, float const *, int, int, int, int, int, int, int, int, int, cudnn::reduced_divisor, bool, int2, int, int)
+                    0.00%  48.594us         1  48.594us  48.594us  48.594us  void fft1d_c2r_32<float2, float, float, bool=0, bool=1, bool=0, bool=0>(float*, float2 const *, int, int3, int3, int2, int, float, float, float*, float*)
+      API calls:   61.31%  49.9939s    528248  94.640us  33.803us  17.9657s  cudaLaunchKernel
+                   14.82%  12.0840s         9  1.34266s  3.0210us  7.60810s  cudaFree
+                   14.27%  11.6333s         8  1.45416s  4.6360us  11.6331s  cudaStreamCreateWithFlags
+                    1.95%  1.59042s     12020  132.31us  45.158us  292.70ms  cuMemcpyDtoHAsync
+                    1.85%  1.50991s        19  79.469ms  64.273us  1.48684s  cuMemAlloc
+                    1.40%  1.14250s    156065  7.3200us  4.1140us  17.551ms  cudaOccupancyMaxActiveBlocksPerMultiprocessorWithFlags
+                    1.18%  965.27ms     12146  79.471us  35.001us  87.239ms  cuMemcpyHtoDAsync
+                    1.18%  963.42ms    132103  7.2920us  2.8120us  28.492ms  cudaEventRecord
+                    0.51%  415.95ms     48328  8.6060us  1.9270us  87.556ms  cuEventRecord
+                    0.38%  307.77ms     12007  25.632us  8.2820us  44.845ms  cuCtxSynchronize
+                    0.31%  255.75ms        34  7.5219ms  36.980us  178.06ms  cuMemsetD32Async
+                    0.17%  142.08ms     24492  5.8010us  2.3440us  874.50us  cuEventQuery
+                    0.15%  125.33ms     24155  5.1880us  2.1350us  14.554ms  cuStreamWaitEvent
+                    0.15%  121.85ms     96067  1.2680us     729ns  914.04us  cudaGetLastError
+                    0.15%  118.47ms        18  6.5816ms  652.31us  48.744ms  cuModuleLoadDataEx
+                    0.04%  31.595ms       631  50.070us     573ns  15.201ms  cuDeviceGetAttribute
+                    0.03%  25.789ms         8  3.2236ms  1.5630us  25.717ms  cuCtxSetCurrent
+                    0.03%  24.790ms        30  826.34us  41.355us  20.832ms  cuLaunchKernel
+                    0.03%  24.583ms         9  2.7314ms  9.2190us  10.059ms  cuEventSynchronize
+                    0.03%  22.282ms         2  11.141ms  1.8272ms  20.455ms  cuMemHostAlloc
+                    0.02%  20.190ms        18  1.1216ms  253.03us  8.3712ms  cuModuleUnload
+                    0.02%  15.454ms         2  7.7268ms  6.9790us  15.447ms  cudaDeviceGetStreamPriorityRange
+                    0.00%  3.7691ms        11  342.65us  25.157us  1.7595ms  cudaMalloc
+                    0.00%  2.9902ms        18  166.12us  51.303us  490.90us  cuMemFree
+                    0.00%  1.8170ms         1  1.8170ms  1.8170ms  1.8170ms  cudaHostAlloc
+                    0.00%  1.5379ms        10  153.79us  3.3850us  1.4664ms  cuStreamCreate
+                    0.00%  701.43us         5  140.29us  31.043us  444.34us  cudaGetDeviceProperties
+                    0.00%  571.58us         3  190.53us  130.94us  287.66us  cudaMemcpy
+                    0.00%  384.96us        15  25.663us  8.9070us  49.428us  cuStreamSynchronize
+                    0.00%  345.90us        30  11.529us  1.5100us  91.409us  cuEventCreate
+                    0.00%  311.21us        39  7.9790us  2.5520us  53.856us  cudaStreamWaitEvent
+                    0.00%  299.70us         4  74.923us  21.823us  225.63us  cudaMemsetAsync
+                    0.00%  231.73us        44  5.2660us  2.4480us  84.638us  cudaEventCreateWithFlags
+                    0.00%  194.38us        11  17.670us  5.1560us  50.418us  cuDeviceTotalMem
+                    0.00%  134.70us        51  2.6410us  1.2500us  26.250us  cudaDeviceGetAttribute
+                    0.00%  128.75us        18  7.1520us  3.4380us  24.011us  cuModuleGetFunction
+                    0.00%  128.60us        31  4.1480us     886ns  24.688us  cuDeviceGet
+                    0.00%  122.76us         1  122.76us  122.76us  122.76us  cuMemsetD32
+                    0.00%  122.61us        18  6.8110us  1.8230us  51.043us  cuEventDestroy
+                    0.00%  105.84us         5  21.167us  6.5630us  72.294us  cuInit
+                    0.00%  100.58us        36  2.7930us  1.0940us  12.656us  cuFuncGetAttribute
+                    0.00%  75.576us        11  6.8700us  1.0420us  50.835us  cuDeviceGetName
+                    0.00%  71.044us         4  17.761us  4.1670us  55.991us  cudaStreamCreateWithPriority
+                    0.00%  59.063us         9  6.5620us  3.9580us  13.490us  cuEventElapsedTime
+                    0.00%  46.355us         2  23.177us  20.990us  25.365us  cudaEventCreate
+                    0.00%  45.419us         5  9.0830us  3.8030us  13.542us  cudaGetDevice
+                    0.00%  37.759us        14  2.6970us     937ns  4.8440us  cuDeviceGetCount
+                    0.00%  36.669us         6  6.1110us  4.0630us  8.0730us  cuDeviceGetPCIBusId
+                    0.00%  36.564us         2  18.282us  3.5420us  33.022us  cudaGetDeviceCount
+                    0.00%  36.147us        11  3.2860us     781ns  7.1870us  cuDriverGetVersion
+                    0.00%  28.854us         2  14.427us  5.2600us  23.594us  cudaSetDevice
+                    0.00%  20.938us         2  10.469us  8.3860us  12.552us  cudaEventDestroy
+                    0.00%  19.532us         1  19.532us  19.532us  19.532us  cuMemGetInfo
+                    0.00%  11.615us         1  11.615us  11.615us  11.615us  cudaHostGetDevicePointer
+                    0.00%  8.1250us         5  1.6250us     990ns  3.3850us  cuDeviceGetUuid
+                    0.00%  2.3440us         1  2.3440us  2.3440us  2.3440us  cuDevicePrimaryCtxGetState
+                    0.00%  1.5630us         1  1.5630us  1.5630us  1.5630us  cuDevicePrimaryCtxRetain
+                    0.00%  1.1460us         1  1.1460us  1.1460us  1.1460us  cuCtxGetCurrent
+                    0.00%  1.0930us         1  1.0930us  1.0930us  1.0930us  cuCtxGetDevice
+                    0.00%     885ns         1     885ns     885ns     885ns  cudaDriverGetVersion

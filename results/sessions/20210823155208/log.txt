@@ -1,0 +1,51 @@
+00019.937 session: m-session-start-id[20210823155208]
+00019.937 parser: m-bmark-run-name[ML Performance 1.0.1]-code[ulp-mlperf]
+00019.944 sequencer: m-sequencer-start
+00019.945 sequencer: m-sequencing-i[1]-command[version]-ack[/parser: m-ready/]-ms[120000]-acc[0]-total_ms[487840]
+00019.945 parser: Command "version"
+00019.945 parser: m-version[3.0.6]
+00019.945 parser: m-ready-finished[version]
+00019.945 sequencer: m-sequencing-i[2]-command[bm cfg ulp-mlperf]-ack[/parser: m-ready/]-ms[120000]-acc[120000]-total_ms[487840]
+00019.945 parser: Command "bm cfg ulp-mlperf"
+00020.446 parser: m-bm-cfg-name[ulp-mlperf]-key[iterWarmup]-val[1]
+00020.446 parser: m-bm-cfg-name[ulp-mlperf]-key[iterInfer]-val[2400]
+00020.446 parser: m-bm-cfg-name[ulp-mlperf]-key[runMode]-val[single]
+00020.446 parser: m-bm-cfg-name[ulp-mlperf]-key[model]-val[kws01]
+00020.446 parser: m-bm-cfg-name[ulp-mlperf]-key[sourceDir]-val[/Users/danielmorandini/eembc/runner/benchmarks/ulp-mlperf/datasets]
+00020.446 parser: m-bm-cfg-name[ulp-mlperf]-key[singleInputFn]-val[tst_000000_Stop_7.bin]
+00020.446 parser: m-ready-finished[bm]
+00020.447 sequencer: m-sequencing-i[3]-command[dut profile]-ack[/dut: m-ready/]-ms[120000]-acc[240000]-total_ms[487840]
+00020.447 parser: Command "dut profile"
+00020.447 parser: m-ready-finished[dut]
+00020.452 dut: m-profile-[ULPMark for tinyML Firmware V0.0.1]
+00020.452 dut: m-model-[kws01]
+00020.452 dut: m-ready
+00020.452 sequencer: m-sequencing-i[4]-command[dut timestamp]-ack[/dut: m-ready/]-ms[120000]-acc[360000]-total_ms[487840]
+00020.452 parser: Command "dut timestamp"
+00020.453 parser: m-ready-finished[dut]
+00020.458 dut: m-lap-us-6804476
+00020.458 dut: m-ready
+00020.458 sequencer: m-sequencing-i[5]-command[bload dut "/Users/danielmorandini/eembc/runner/benchmarks/ulp-mlperf/datasets/kws01/tst_000000_Stop_7.bin"]-ack[/parser: m-ready/]-ms[7840]-acc[480000]-total_ms[487840]
+00020.458 parser: Command "bload dut "/Users/danielmorandini/eembc/runner/benchmarks/ulp-mlperf/datasets/kws01/tst_000000_Stop_7.bin""
+00020.458 parser: File size is 490, loading...
+00020.459 parser: Starting at byte offset 0
+00020.459 parser: Sending 490 bytes
+00020.459 parser: m-mute-target[dut]
+00020.524 parser: m-unmute-target[dut]
+00020.524 parser: Binary load took 0.065 sec, or 7.529 kB/sec
+00020.524 parser: m-bload-done
+00020.524 parser: m-ready-finished[bload]
+00020.524 sequencer: m-sequencing-i[6]-command[dut infer 2400 1]-ack[/dut.?: m-ready/]-ms[-1]-acc[487840]-total_ms[487840]
+00020.524 parser: Command "dut infer 2400 1"
+00020.524 parser: m-ready-finished[dut]
+00020.532 dut: m-warmup-start-1
+00047.123 dut: m-warmup-done
+00047.123 dut: m-infer-start-2400
+00047.123 dut: m-lap-us-13712352
+00057.160 dut: m-lap-us-24252829
+00057.160 dut: m-infer-done
+00057.161 dut: m-results-[0.000000,0.000000,0.000000,0.000000,0.000000,0.000000,0.000001,0.000001,0.000000,0.000001,0.000000,0.999997]
+00057.176 dut: m-ready
+00057.176 sequencer: m-sequencer-stop
+00057.177 session: m-session-stop-id[20210823155208]
+00057.177 session: Saved this run to session ID 20210823155208
