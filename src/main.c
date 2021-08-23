@@ -107,7 +107,7 @@ main(int argc, char *argv[]) {
 	int opt;
 
 	model_dir = "kws_ref_model";
-	line = "/dev/ttyTHS1";
+	line = "/dev/ttyGS0";
 	while((opt = getopt(argc, argv, "d:l:")) != -1) {
 		switch(opt) {
 		case 'd':
