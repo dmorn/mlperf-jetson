@@ -73,7 +73,6 @@ void th_post() {}
 
 void
 th_command_ready(char volatile *p_command) {
-	fprintf(stderr, "executing: [%s]\n", p_command);
 	p_command = p_command;
 	ee_serial_command_parser_callback((char *)p_command);
 }
@@ -119,7 +118,7 @@ main(int argc, char *argv[]) {
 	ee_benchmark_initialize();
 	while (1) {
 		int c;
-		if((c = th_getchar()) == '\0')
+		if(!isprint(c = th_getchar()) || c == '\0')
 			continue;
 		ee_serial_callback(c);
 	}

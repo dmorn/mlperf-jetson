@@ -70,6 +70,13 @@ th_final_initialize(void) {
 	fprintf(stderr, "** READY\n");
 }
 
+
+void
+tf_freetensors(void) {
+	TF_DeleteTensor(*tfi);
+	TF_DeleteTensor(*tfo);
+}
+
 void
 tf_load(uint8_t *buf, size_t n) {
 	size_t len = n * sizeof(float);
@@ -142,7 +149,6 @@ th_results() {
 
 	th_printf("m-results-[");
 	for (int i = 0; i < kCategoryCount; i++) {
-		fprintf(stderr, "res(%d,%s) -> %.8f\n", i, kCategoryLabels[i], *p);
 		th_printf("%f", *p++);
 		if (i < (kCategoryCount - 1)) {
 			th_printf(",");
@@ -150,25 +156,7 @@ th_results() {
 	}
 	th_printf("]\r\n");
 
-	// TODO: free up everything? Not if infer is called before a load.
-}
-
-void
-tf_free() {
-	TF_DeleteGraph(g);
-	TF_DeleteSessionOptions(opts);
-
-	TF_CloseSession(sess, s);
-	if(TF_GetCode(s) != TF_OK) {
-		fatale(TF_Message(s));
-	}
-	TF_DeleteSession(sess, s);
-	if(TF_GetCode(s) != TF_OK) {
-		fatale(TF_Message(s));
-	}
-
-	TF_DeleteTensor(*tfi);
-	TF_DeleteTensor(*tfo);
+	tf_freetensors();
 }
 
 char*
