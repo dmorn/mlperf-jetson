@@ -17,13 +17,9 @@ th_getchar() {
 
 	n = read(port, &c, 1);
 	switch(n) {
-/*
 	case -1:
-		fatalep("th_getchar");
-*/
 	case 0:
-	case -1:
-		return '\0';
+		fatalep("th_getchar");
 	default:
 		return c;
 	}
