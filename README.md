@@ -31,9 +31,9 @@ was referencing to that specific device (it must be an alias). Anyway
 ```
 % systemctl stop serial-getty@ttyS0.service
 % systemctl stop serial-getty@ttyGS0.service
+% systemctl stop nvgetty.service 
 ```
 suffices if you have to stop a specific getty service.
-
 
 ## About the model
 ```
