@@ -56,6 +56,7 @@ infer(char *path) {
 		fprintf(stdout, "%s\t: %.5f\n", kCategoryLabels[n], *res++);
 	}
 	tf_freetensors();
+	close(fd);
 }
 
 int
