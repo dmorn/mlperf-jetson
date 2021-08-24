@@ -15,8 +15,6 @@ int port;
 char *line;
 char *model_dir;
 
-char* tf_version(void);
-
 void
 fatale(char *s) {
 	fprintf(stderr, "\nerror: %s\n", s);
@@ -82,7 +80,6 @@ void th_post() {}
 
 void
 th_command_ready(char volatile *p_command) {
-	// p_command = p_command;
 	ee_serial_command_parser_callback((char *)p_command);
 }
 

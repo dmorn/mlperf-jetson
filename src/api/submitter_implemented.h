@@ -70,9 +70,16 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
 // Numbers derived from the model itself - if that changes, these contants
 // should be updated.
+
+#define kNumCols 10
+#define kNumRows 49
+#define kNumChannels 1
+#define kKwsInputSize kNumCols * kNumRows * kNumChannels
+#define kCategoryCount 12
 
 /// \brief required core API
 void th_load_tensor();
@@ -81,6 +88,14 @@ void th_infer();
 void th_timestamp(void);
 void th_printf(const char *fmt, ...);
 char th_getchar();
+
+/// \brief tensor flow API
+void tf_init(void);
+void tf_freetensors(void);
+void tf_load(uint8_t*, size_t);
+void tf_infer(void);
+float* tf_results(void);
+char* tf_version(void);
 
 /// \brief optional API
 void th_serialport_initialize(void);

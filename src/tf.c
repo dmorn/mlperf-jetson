@@ -1,41 +1,28 @@
 /* tf.c provides a benchmark implementation using tensorflow */
 
 #include <stddef.h>
-#include <stdio.h>
 #include <tensorflow/c/c_api.h>
 
-#include "api/internally_implemented.h"
 #include "api/submitter_implemented.h"
-
-#define kNumCols 10
-#define kNumRows 49
-#define kNumChannels 1
-#define kKwsInputSize kNumCols * kNumRows * kNumChannels
-#define kCategoryCount 12
 
 extern char *model_dir;
 const char *tags = "serve";
-
-char* kCategoryLabels[kCategoryCount] = {
-	"down", "go", "left", "no", "off", "on",
-	"right", "stop", "up", "yes", "silence", "unknown"
-};
-
-static TF_Status *s;
-static TF_Session *sess;
-static TF_Graph* g;
-static TF_SessionOptions *opts;
 
 /* Sizes are model and hardcoded here; they could be computed from model
  * shape itself, or shapes could be provided by a lookup table.
  */
 static TF_Output ndi[1], ndo[1];
 static TF_Tensor *tfi[1], *tfo[1];
+static TF_Session *sess;
 
 void fatale(char *s);
 
 void
-th_final_initialize(void) {
+tf_init(void) {
+	TF_SessionOptions *opts;
+	TF_Status *s;
+	TF_Graph* g; // Leaked.
+
 	/* 
 	inputs['input_1'] tensor_info:
 	      dtype: DT_FLOAT
@@ -48,7 +35,7 @@ th_final_initialize(void) {
 	      name: StatefulPartitionedCall:0
 	Method name is: tensorflow/serving/predict
 	*/
-	fprintf(stderr, "initializing tensors..");
+	fprintf(stderr, "initializing tensorflow..");
 
 	g = TF_NewGraph();
 	s = TF_NewStatus();
@@ -57,6 +44,7 @@ th_final_initialize(void) {
 	if(TF_GetCode(s) != TF_OK) {
 		fatale(TF_Message(s));
 	}
+	TF_DeleteSessionOptions(opts);
 
 	if((ndi->oper = TF_GraphOperationByName(g, "serving_default_input_1")) == NULL)
 		fatale("input operation not found within graph");
@@ -67,14 +55,6 @@ th_final_initialize(void) {
 	ndo->index = 0;
 
 	fprintf(stderr, ".done\n");
-	fprintf(stderr, "** READY\n");
-}
-
-
-void
-tf_freetensors(void) {
-	TF_DeleteTensor(*tfi);
-	TF_DeleteTensor(*tfo);
 }
 
 void
@@ -100,27 +80,10 @@ tf_load(uint8_t *buf, size_t n) {
 }
 
 void
-th_load_tensor() {
-	static int nload = 0;
-	uint8_t buf[kKwsInputSize];
-	size_t n, len;
+tf_infer(void) {
+	TF_Status *s;
 
-	fprintf(stderr, "%d: th_load_tensor called!\n", nload++);
-
-	// expected input: 10x49 8b MFCC
-	len = sizeof(buf);
-	n = ee_get_buffer(buf, sizeof(buf));
-	if(n != len)
-		fatale("ee_get_buffer: short read");
-
-	tf_load(buf, kKwsInputSize);
-}
-
-void
-th_infer() {
-	static int ninfer = 0;
-
-	fprintf(stderr, "%d: th_infer called!\n", ninfer++);
+	s = TF_NewStatus();
 	TF_SessionRun(
 		sess, NULL,
 		ndi, tfi, 1,
@@ -135,28 +98,20 @@ th_infer() {
 }
 
 void
-th_results() {
-	float *p;
+tf_freetensors(void) {
+	TF_DeleteTensor(*tfi);
+	TF_DeleteTensor(*tfo);
+}
 
-	fprintf(stderr, "th_results called!\n");
-
+/* Free tensors after calling this function with tf_freetensors */
+float*
+tf_results(void) {
 	if(*tfo == NULL)
 		fatale("output tensor is empty");
 	if(TF_TensorElementCount(*tfo) != kCategoryCount)
 		fatale("unexpected tensor element count");
 
-	p = (float*)TF_TensorData(*tfo);
-
-	th_printf("m-results-[");
-	for (int i = 0; i < kCategoryCount; i++) {
-		th_printf("%f", *p++);
-		if (i < (kCategoryCount - 1)) {
-			th_printf(",");
-		}
-	}
-	th_printf("]\r\n");
-
-	tf_freetensors();
+	return (float*)TF_TensorData(*tfo);
 }
 
 char*
