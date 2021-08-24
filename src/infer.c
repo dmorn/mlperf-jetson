@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <ctype.h>
 #include <stddef.h>
+#include <fcntl.h>
 
 #include "api/submitter_implemented.h"
 
@@ -17,7 +18,7 @@ char *model_dir;
 
 int
 usage(char *name) {
-	fprintf(stderr, "usage: %s -d [model dir] <image.bin \n", name);
+	fprintf(stderr, "usage: %s -d [model dir] [list of inferrable audio files, 490B each] \n", name);
 	exit(2);
 }
 
@@ -33,12 +34,34 @@ fatalep(char *s) {
 	exit(1);
 }
 
+void
+infer(char *path) {
+	int fd;
+	size_t n, len;
+	uint8_t buf[kKwsInputSize];
+	float* res;
+
+	if((fd = open(path, O_RDONLY)) < 0)
+		fatalep("infer");
+
+	len = sizeof(buf);
+	if((n = read(fd, &buf, len)) <= 0 || n < len)
+		fatalep("infer");
+
+	fprintf(stdout, "spotting keywork in %s\n", path);
+	tf_load(buf, kKwsInputSize);
+	tf_infer();
+	res = tf_results();
+	for(n = 0; n < kCategoryCount; n++) {
+		fprintf(stdout, "%s\t: %.5f\n", kCategoryLabels[n], *res++);
+	}
+	tf_freetensors();
+}
+
 int
 main(int argc, char *argv[]) {
 	int opt;
 	size_t n, len;
-	uint8_t buf[kKwsInputSize];
-	float* res;
 
 	model_dir = "kws_ref_model";
 	while((opt = getopt(argc, argv, "d:")) != -1) {
@@ -51,20 +74,12 @@ main(int argc, char *argv[]) {
 			usage(*argv);
 		}
 	}
+	argc -= optind;
+	argv += optind;
 
 	fprintf(stderr, "model_dir=%s tf=%s\n", model_dir, tf_version());
-
-	len = sizeof(buf);
-	if((n = read(0, &buf, len)) <= 0 || n < len)
-		perror("short read on stdin");
-
 	tf_init();
-	tf_load(buf, kKwsInputSize);
-	fprintf(stderr, "spotting keyword\n");
-	tf_infer();
-	res = tf_results();
-	for(n = 0; n < kCategoryCount; n++) {
-		fprintf(stdout, "%s\t: %.5f\n", kCategoryLabels[n], *res++);
+	for(;argc > 0; argc--) {
+		infer(*argv++);
 	}
-	tf_freetensors();
 }

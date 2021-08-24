@@ -22,6 +22,8 @@ tf_init(void) {
 	TF_SessionOptions *opts;
 	TF_Status *s;
 	TF_Graph* g; // Leaked.
+	uint8_t buf[kKwsInputSize];
+	float *res;
 
 	/* 
 	inputs['input_1'] tensor_info:
@@ -53,6 +55,13 @@ tf_init(void) {
 	if((ndo->oper = TF_GraphOperationByName(g, "StatefulPartitionedCall")) == NULL)
 		fatale("output operation not found within graph");
 	ndo->index = 0;
+
+	/* Make a first inference to force tensorflow load all runtime dynamic
+	 * libraries (\o/) */
+	tf_load(buf, kKwsInputSize);
+	tf_infer();
+	res = tf_results();
+	tf_freetensors();
 
 	fprintf(stderr, ".done\n");
 }
