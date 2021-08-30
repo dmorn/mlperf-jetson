@@ -1,6 +1,9 @@
 # mlperf-jetson
 mlcommons tiny performance benchmark on **NVIDIA Jetson Nano**.
 
+## Slides
+https://slides.com/danielmorandini/deck-b05030
+
 ## Notes
 The board's SD card needs to be populated with the proper software stack.
 Pre-crafted images are provided at
