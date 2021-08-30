@@ -5,6 +5,8 @@
 #include <ctype.h>
 #include <stddef.h>
 #include <fcntl.h>
+#include <time.h>
+#include <cuda_profiler_api.h>
 
 #include "api/submitter_implemented.h"
 
@@ -35,34 +37,33 @@ fatalep(char *s) {
 }
 
 void
-infer(char *path) {
-	int fd;
-	size_t n, len;
-	uint8_t buf[kKwsInputSize];
+infer(uint8_t *buf, size_t bufn) {
+	size_t n;
 	float* res;
 
-	if((fd = open(path, O_RDONLY)) < 0)
-		fatalep("infer");
-
-	len = sizeof(buf);
-	if((n = read(fd, &buf, len)) <= 0 || n < len)
-		fatalep("infer");
-
-	fprintf(stdout, "spotting keywork in %s\n", path);
-	tf_load(buf, kKwsInputSize);
+	tf_load(buf, bufn);
 	tf_infer();
 	res = tf_results();
+	/*
 	for(n = 0; n < kCategoryCount; n++) {
 		fprintf(stdout, "%s\t: %.5f\n", kCategoryLabels[n], *res++);
 	}
+	*/
 	tf_freetensors();
-	close(fd);
+}
+
+unsigned long
+timestamp(void) {
+	unsigned long microSeconds = 0ul;
+	return (unsigned long)((uint64_t)clock() * 1000000 / CLOCKS_PER_SEC);
 }
 
 int
 main(int argc, char *argv[]) {
-	int opt;
-	size_t n, len;
+	int opt, fd;
+	size_t n, len, i;
+	uint8_t *buf, *ptr;
+	unsigned long tic, toc;
 
 	model_dir = "kws_ref_model";
 	while((opt = getopt(argc, argv, "d:")) != -1) {
@@ -78,9 +79,37 @@ main(int argc, char *argv[]) {
 	argc -= optind;
 	argv += optind;
 
+	if((buf = malloc(sizeof(uint8_t) * argc * kKwsInputSize)) == NULL)
+		fatalep("malloc");
+	ptr = buf;
+
+	for(size_t i = argc; i > 0; i--) {
+		fprintf(stdout, "loading MFSC from %s\n", *argv);
+		if((fd = open(*argv++, O_RDONLY)) < 0)
+			fatalep("open");
+
+		len = sizeof(uint8_t) * kKwsInputSize;
+		if((n = read(fd, ptr, len)) <= 0 || n < len)
+			fatalep("read");
+
+		close(fd);
+		ptr+=len;
+	}
+
 	fprintf(stderr, "model_dir=%s tf=%s\n", model_dir, tf_version());
 	tf_init();
-	for(;argc > 0; argc--) {
-		infer(*argv++);
+	cudaProfilerStart();
+	tic = timestamp();
+	for(size_t i = argc; i > 0; i--) {
+		fprintf(stdout, "inferring keywords in %s\n", *(argv-i));
+		infer(buf+(i*kKwsInputSize), kKwsInputSize);
 	}
+	toc = timestamp();
+	cudaProfilerStop();
+
+	fprintf(stdout, "Inferences: %d\n", argc);
+	fprintf(stdout, "Elapsed time (microseconds): %lu\n", toc - tic);
+	fprintf(stdout, "Elapsed time (microseconds) per inference: %lu\n", (toc - tic)/argc);
+
+	free(buf);
 }
