@@ -14,8 +14,8 @@ RM = rm -f
 ARFLAGS := -csr
 
 CXXFLAGS += -std=c++11 -I. -g
-CCFLAGS += -std=c11 -I. -g -Wno-discarded-qualifiers
-LDFLAGS += -lm -ltensorflow -g
+CCFLAGS += -std=c11 -I. -I/usr/local/cuda/include -g -Wno-discarded-qualifiers
+LDFLAGS += -L/usr/local/cuda/lib64 -lm -ltensorflow -lcudart -g
 
 all: runner infer
 $(BINDIR): ; mkdir -p $(BINDIR)

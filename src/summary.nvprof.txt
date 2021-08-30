@@ -1,0 +1,13 @@
+======== Profiling result:
+Time(%)      Time     Calls       Avg  Name
+ 21.43%  90.383ms      4004  22.573us  void precomputed_convolve_sgemm
+ 17.48%  73.740ms      9009  8.1850us  void tensorflow::functor::FusedBatchNormInferenceMetaKernel
+ 15.37%  64.825ms      9009  7.1950us  void tensorflow::BiasNCHWKernel
+ 12.23%  51.564ms      4004  12.878us  void tensorflow::DepthwiseConv2dGPUKernelNCHWSmall
+  8.36%  35.247ms      1001  35.212us  void explicit_convolve_sgemm
+  7.37%  31.083ms      5005  6.2100us  void tensorflow::functor::ShuffleInTensor3Simple
+  4.88%  20.592ms      1001  20.571us  void cudnn::cnn::im2col4d_kernel
+  3.97%  16.732ms      1001  16.715us  void cudnn::ops::pooling_fw_4d_kernel
+  2.86%  12.054ms      4004  3.0100us  void cudnn::cnn::kern_precompute_indices
+  0.12%  507.84us      1001     507ns  [CUDA memcpy DtoH]
+  0.11%  467.69us      1001     467ns  [CUDA memcpy HtoD]

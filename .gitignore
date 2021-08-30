@@ -2,3 +2,4 @@
 runner
 infer
 *.nvprof
+*.prof
